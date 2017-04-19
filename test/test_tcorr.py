@@ -307,7 +307,7 @@ class TestAppTcorr(TestCase):
         # Check After
         self.assertEquals(directCorrelationData2[0][7], 158 + 21, "test_TcorrTest1 - After failed!")
 
-    def test_TcorrAmCache(self):
+    def _test_TcorrAmCache(self):
         load_test_path = self.BuildTestPath("TestData-AmCache")
         # Get temp db name for the test
         tempdb = tempfile.NamedTemporaryFile(suffix='.db', prefix='testCase', dir=tempfile.gettempdir())
