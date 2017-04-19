@@ -3,6 +3,7 @@ setuptools>=3.3
 argparse>=1.2.1
 libregf-python>=20141030
 future>=0.15.2
+-e git+git://github.com/williballenthin/python-registry@1a669eada6f7933798751e0cf482a9eb654c739b
 
 #Not required but highly recommended:
 psutil>=4.3.1
