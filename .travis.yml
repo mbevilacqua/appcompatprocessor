@@ -15,13 +15,10 @@ env:
   - LIBREGF-PYTHON-VERSION=20141030
   - LIBREGF-PYTHON-VERSION=20160424
 
-before_install:
+install:
  - wget https://github.com/libyal/libregf/releases/download/$LIBREGF-PYTHON-VERSION/libregf-alpha-$LIBREGF-PYTHON-VERSION.tar.gz
  - tar xzvf libregf-alpha-$LIBREGF-PYTHON-VERSION.tar.gz
  - pushd libregf-$LIBREGF-PYTHON-VERSION && ./configure --enable-python && make && sudo make install && python setup.py build && python setup.py install && popd
-
-# command to install dependencies
-install:
  - pip install faker
  - pip install -r requirements.txt --use-mirrors
 
