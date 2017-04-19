@@ -8,7 +8,7 @@ sys.setdefaultencoding("utf-8")
 import os
 from AppCompatProcessor import main
 import appDB
-from auxTest import build_fake_DB
+from test.auxTest import build_fake_DB
 
 # Setup the logger
 logger = logging.getLogger()
