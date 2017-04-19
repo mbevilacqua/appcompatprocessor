@@ -4,16 +4,27 @@ branches:
   - master
   - develop
 
-os:
-  - linux
+matrix:
+    include:
+        - linux
+          language: python
+          python:
+            - "2.7"
 
-language: python
-python:
-  - "2.7"
+        - os: osx
+          language: generic
 
 env:
   - LIBREGF_PYTHON_VERSION="20160424"
   - LIBREGF_PYTHON_VERSION="20170130"
+
+
+# Perform the manual steps on osx to install python3 and activate venv
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install python2.7; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then virtualenv venv -p python2.7; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source venv/bin/activate; fi
 
 install:
  - wget https://github.com/libyal/libregf/releases/download/$LIBREGF_PYTHON_VERSION/libregf-alpha-$LIBREGF_PYTHON_VERSION.tar.gz
