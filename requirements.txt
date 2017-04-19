@@ -1,0 +1,14 @@
+pip>=1.5.4
+setuptools>=3.3
+argparse>=1.2.1
+libregf-python>=20141030
+future>=0.15.2
+
+#Not required but highly recommended:
+psutil>=4.3.1
+python_Levenshtein>=0.10.0
+termcolor>=1.1.0
+
+#Devs only:
+#unittest2>=0.5.1
+#Faker==0.7.3
