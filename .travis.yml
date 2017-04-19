@@ -28,6 +28,7 @@ install:
 # command to run tests
 script: pytest ./test/test_status.py ./test/test_dump.py ./test/test_filehitcount.py ./test/test_leven.py ./test/test_mpengine.py ./test/test_search.py ./test/test_stack.py ./test/test_tcorr.py ./test/test_tstack.py ./test/test_tstomp.py
 
+
 notifications:
   email:
     on_success: never
