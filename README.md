@@ -1,3 +1,10 @@
+**Build Status:**
+- Master [![Build Status](https://travis-ci.org/mbevilacqua/appcompatprocessor.svg?branch=master)](https://travis-ci.org/mbevilacqua/appcompatprocessor)
+- Develop [![Build Status](https://travis-ci.org/mbevilacqua/appcompatprocessor.svg?branch=develop)](https://travis-ci.org/mbevilacqua/appcompatprocessor)
+
+
+
+
 # AppCompatProcessor (Beta)
 "_Evolving AppCompat/AmCache data analysis beyond grep_"
 
