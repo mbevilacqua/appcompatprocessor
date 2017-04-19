@@ -6,17 +6,12 @@ branches:
 
 os:
   - linux
-  - osx
 
 language: python
 python:
   - "2.7"
 
 before_install:
- - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; brew update
- - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; brew install python2.7
- - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; virtualenv env -p python2.7
- - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; source env/bin/activate
  - wget https://github.com/libyal/libregf/releases/download/20160424/libregf-alpha-20160424.tar.gz
  - tar xzvf libregf-alpha-20160424.tar.gz
  - pushd libregf-20160424 && ./configure --enable-python && make && sudo make install && python setup.py build && python setup.py install && popd
