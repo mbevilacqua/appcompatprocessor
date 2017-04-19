@@ -9,7 +9,7 @@ import os
 from AppCompatProcessor import main
 from ShimCacheParser import read_mir, write_it
 import appDB
-from auxTest import build_fake_DB, add_entry
+from test.auxTest import build_fake_DB, add_entry
 
 # Setup the logger
 logger = logging.getLogger()

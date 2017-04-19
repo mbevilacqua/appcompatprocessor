@@ -12,7 +12,7 @@ from ShimCacheParser import read_mir, write_it
 import tempfile
 import appDB
 import re, codecs
-from auxTest import build_fake_DB, add_entry
+from test.auxTest import build_fake_DB, add_entry
 
 # Setup the logger
 logger = logging.getLogger()

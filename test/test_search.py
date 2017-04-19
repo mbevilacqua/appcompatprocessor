@@ -12,7 +12,7 @@ import re, codecs
 import appDB
 import random
 import string
-from auxTest import build_fake_DB, add_entry
+from test.auxTest import build_fake_DB, add_entry
 
 # Setup the logger
 logger = logging.getLogger()
