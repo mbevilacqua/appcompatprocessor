@@ -12,8 +12,8 @@ python:
   - "2.7"
 
 env:
-  - LIBREGF-PYTHON-VERSION=20141030
-  - LIBREGF-PYTHON-VERSION=20160424
+  - LIBREGF-PYTHON-VERSION="20141030"
+  - LIBREGF-PYTHON-VERSION="20160424"
 
 install:
  - wget https://github.com/libyal/libregf/releases/download/$LIBREGF-PYTHON-VERSION/libregf-alpha-$LIBREGF-PYTHON-VERSION.tar.gz
