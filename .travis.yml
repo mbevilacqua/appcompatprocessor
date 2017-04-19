@@ -3,7 +3,7 @@ python:
   - "2.7"
 
 before_install:
-- https://github.com/libyal/libregf/releases/download/20160424/libregf-alpha-20160424.tar.gz
+- wget https://github.com/libyal/libregf/releases/download/20160424/libregf-alpha-20160424.tar.gz
 - tar xzvf libregf-alpha-20160424.tar.gz
 - pushd libregf-alpha-20160424 && ./configure --enable-python && make && sudo make install && python setup.py build && python setup.py install && popd
 
@@ -11,4 +11,4 @@ before_install:
 install: "pip install -r requirements.txt"
 
 # command to run tests
-script: pytest
+script: pushd test && pytest test_status.py && popd
