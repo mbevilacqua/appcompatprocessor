@@ -18,12 +18,18 @@ DB = None
 
 
 class TestAppStack(TestCase):
-    # Build test dataset
-    testset1 = build_fake_DB(3)
+    testset1 = ''
 
-    def __del__(self):
+    @classmethod
+    def setup_class(self):
+        # Build test dataset
+        self.testset1 = build_fake_DB(3)
+
+    @classmethod
+    def teardown_class(self):
         # Remove temp dbs
         os.remove(self.testset1)
+
 
     def test_Stack(self):
         rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(15))

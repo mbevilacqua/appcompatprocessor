@@ -40,10 +40,15 @@ def create_ShimCacheTxtFile(fileFullPath):
 
 
 class TestAppTcorr(TestCase):
-    # Build test dataset
-    testset1 = build_fake_DB(1)
+    testset1 = ''
 
-    def __del__(self):
+    @classmethod
+    def setup_class(self):
+        # Build test dataset
+        self.testset1 = build_fake_DB(1)
+
+    @classmethod
+    def teardown_class(self):
         # Remove temp dbs
         os.remove(self.testset1)
 

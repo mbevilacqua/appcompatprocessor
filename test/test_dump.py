@@ -17,10 +17,15 @@ from test.auxTest import build_fake_DB
 logger = logging.getLogger()
 
 class TestAppDump(TestCase):
-    # Build test dataset
-    testset10 = build_fake_DB(10)
+    testset10 = ''
 
-    def __del__(self):
+    @classmethod
+    def setup_class(self):
+        # Build test dataset
+        self.testset10 = build_fake_DB(10)
+
+    @classmethod
+    def teardown_class(self):
         # Remove temp dbs
         os.remove(self.testset10)
 

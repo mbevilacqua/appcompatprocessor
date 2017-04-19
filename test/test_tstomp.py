@@ -36,11 +36,15 @@ def create_ShimCacheTxtFileTstomp(fileFullPath):
 
 
 class TestAppTstomp(TestCase):
-    # Build test dataset
-    fake_bd_num_records = 3
-    testset1 = build_fake_DB(fake_bd_num_records)
+    testset1 = ''
 
-    def __del__(self):
+    @classmethod
+    def setup_class(self):
+        # Build test dataset
+        self.testset1 = build_fake_DB(3)
+
+    @classmethod
+    def teardown_class(self):
         # Remove temp dbs
         os.remove(self.testset1)
 

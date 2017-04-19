@@ -16,11 +16,16 @@ DB = None
 
 
 class TestAppStatus(TestCase):
-    # Build test dataset
     fake_bd_num_hosts = 3
-    testset1 = build_fake_DB(fake_bd_num_hosts)
+    testset1 = ''
 
-    def __del__(self):
+    @classmethod
+    def setup_class(self):
+        # Build test dataset
+        self.testset1 = build_fake_DB(self.fake_bd_num_hosts)
+
+    @classmethod
+    def teardown_class(self):
         # Remove temp dbs
         os.remove(self.testset1)
 

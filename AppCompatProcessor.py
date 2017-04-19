@@ -1107,6 +1107,7 @@ def appTimeStack(DB, options):
 
 def appStack(DB, options):
     import operator
+    results = []
 
     # Grab data
     rows = DB.QuerySpinner("SELECT %s FROM Entries_FilePaths WHERE %s" %(options.stack_what.strip('\\\''), options.stack_from))
@@ -1117,7 +1118,6 @@ def appStack(DB, options):
             stack[tuple(row)] += 1
 
         sorted_stack = sorted(stack.items(), key=operator.itemgetter(1))
-        results = []
         filler = ',-' * (len(rows[0]) - 2)
         results.append(('cyan', ("Count,What %s" % filler).split(',')))
         for item in sorted_stack:
@@ -1127,7 +1127,6 @@ def appStack(DB, options):
         print "No results"
 
     return results
-
 
 
 
