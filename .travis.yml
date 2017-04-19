@@ -11,15 +11,22 @@ language: python
 python:
   - "2.7"
 
-before_install:
- - wget https://github.com/libyal/libregf/releases/download/20160424/libregf-alpha-20160424.tar.gz
- - tar xzvf libregf-alpha-20160424.tar.gz
- - pushd libregf-20160424 && ./configure --enable-python && make && sudo make install && python setup.py build && python setup.py install && popd
+env:
+  - LIBREGF_PYTHON_VERSION="20160424"
+  - LIBREGF_PYTHON_VERSION="20170130"
 
-# command to install dependencies
 install:
+ - wget https://github.com/libyal/libregf/releases/download/$LIBREGF_PYTHON_VERSION/libregf-alpha-$LIBREGF_PYTHON_VERSION.tar.gz
+ - tar xzvf libregf-alpha-$LIBREGF_PYTHON_VERSION.tar.gz
+ - pushd libregf-$LIBREGF_PYTHON_VERSION && ./configure --enable-python && make && sudo make install && python setup.py build && python setup.py install && popd
  - pip install faker
  - pip install -r requirements.txt
 
 # command to run tests
 script: pytest ./test/test_status.py ./test/test_dump.py ./test/test_filehitcount.py ./test/test_leven.py ./test/test_mpengine.py ./test/test_search.py ./test/test_stack.py ./test/test_tcorr.py ./test/test_tstack.py ./test/test_tstomp.py
+
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always

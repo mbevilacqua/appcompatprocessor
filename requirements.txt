@@ -1,8 +1,9 @@
 pip>=1.5.4
 setuptools>=3.3
 argparse>=1.2.1
-libregf-python>=20141030
+libregf-python>=20160424
 future>=0.15.2
+-e git+git://github.com/williballenthin/python-registry@1a669eada6f7933798751e0cf482a9eb654c739b#egg=python-registry
 
 #Not required but highly recommended:
 psutil>=4.3.1

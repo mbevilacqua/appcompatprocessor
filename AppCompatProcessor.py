@@ -12,6 +12,7 @@ import multiprocessing
 import datetime
 import re
 import itertools
+import traceback
 from appAux import psutil_phymem_usage
 from appAux import update_progress, outputcolum
 from appLoad import appLoadMP
@@ -57,8 +58,7 @@ except ImportError:
 # Housekeeping and get ready to run
 settings.init()
 logger = None
-__description__ = 'AppCompatProcessor (Beta ' + settings.__version__ + ' [' + settings.__versiondate__ + '])\n\
-Feedback, bugs, complaints: matias.bevilacqua@mandiant.com'
+__description__ = 'AppCompatProcessor (Beta ' + settings.__version__ + ' [' + settings.__versiondate__ + '])'
 
 
 def ReconScan(DB, options):
