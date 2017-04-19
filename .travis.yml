@@ -6,11 +6,7 @@ branches:
 
 matrix:
     include:
-        - linux
-          language: python
-          python:
-            - "2.7"
-
+        - python: 2.7
         - os: osx
           language: generic
 
