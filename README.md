@@ -203,7 +203,8 @@ dsquery.exe           11
 
 **tcorr 'filename'**: Search for temporal execution correlations on 'filename'
 
-Searches for files which present a high 'temporal execution correlation' with the 'filename' provided
+Searches for files which present a high 'temporal execution correlation' with the 'filename' provided.
+
 A high temporal execution correlation between file A and file B indicates that file B is usually exectuted before/after file A (think dropper -> payload)
 ``` bash
 ./AppCompatProcessor.py ./test1.db tcorr "net.exe"
