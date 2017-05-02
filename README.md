@@ -17,8 +17,22 @@ AppCompatProcessor has been designed to extract additional value from enterprise
 ### Installation:
 
 **OSX**
-You need Python 2.7+, libregf and pyregf (python bindings) from https://github.com/libyal/libregf
+You need Python 2.7+, libregf and pyregf (python bindings)
 
+Easy path, install from a release https://github.com/libyal/libregf/releases
+
+Note tested with: libregf-alpha-20170130
+
+- ./configure && make
+- sudo make install
+- python setup.py build
+- python setup.py install
+
+Hard path, install from bleeding edge source https://github.com/libyal/libregf
+- git clone https://github.com/libyal/libregf.git
+- cd libregf/
+- ./synclibs.sh
+- ./autogen.sh
 - ./configure && make
 - sudo make install
 - python setup.py build
