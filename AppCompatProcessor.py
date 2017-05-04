@@ -991,17 +991,18 @@ def appHashSearch(DB, options):
             for item in cryo_data:
                 sha1 = item[0]
                 cryo_tags = item[1]
-                print "\n\nHits for [%s - %s]:" % (sha1, cryo_tags)
                 try:
                     data = DB.Query("Select HostName, FirstRun, FilePath||'\\'||FileName, SHA1 FROM Entries_FilePaths \
                                         INNER JOIN Hosts ON Entries_FilePaths.hostID = Hosts.hostID WHERE SHA1 = '%s'" % (sha1))
                 except Exception as e:
                     traceback.print_exc(file=sys.stdout)
                 results = []
-                results.append(('cyan', "HostName,FirstRun,FilePath,FileName,SHA1".split(',')))
-                for row in data:
-                    results.append(('white', row))
-                outputcolum(results)
+                if data:
+                    print "\n\nHits for [%s - %s]:" % (sha1, cryo_tags)
+                    results.append(('cyan', "HostName,FirstRun,FilePath,FileName,SHA1".split(',')))
+                    for row in data:
+                        results.append(('white', row))
+                    outputcolum(results)
 
                 # Update progress
                 progressCurrent += 1
