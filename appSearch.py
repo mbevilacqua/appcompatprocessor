@@ -497,7 +497,13 @@ def runIndexedSearch(dbfilenameFullPath, search_space, options):
         for row in data:
             results.append(('white', row))
         outputcolum(results)
-        return (len(results), 0, results)
+
+        # Dump results to disk
+        with open(options.outputFile, "w") as text_file:
+            for row in results:
+                text_file.write("%s\n" %row)
+
+        return (len(results) - 1, 0, results)
     else: return (0, 0, [])
 
 
