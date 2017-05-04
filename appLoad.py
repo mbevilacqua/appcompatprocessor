@@ -38,6 +38,7 @@ from Ingest import appcompat_redline
 from Ingest import appcompat_raw_hive
 from Ingest import appcompat_miracquisition
 from Ingest import amcache_raw_hive
+from Ingest import appcompat_mirShimShady_v1
 try:
     import pyregf
 except ImportError:
@@ -55,6 +56,7 @@ supported_ingest_plugins = ['appcompat_parsed.Appcompat_parsed', 'amcache_miracq
                             'appcompat_mirlua_v2.Appcompat_mirlua_v2', 'appcompat_csv.Appcompat_csv',
                             'appcompat_redline.Appcompat_redline', 'appcompat_raw_hive.Appcompat_Raw_hive',
                             'appcompat_miracquisition.Appcompat_miracquisition', 'amcache_raw_hive.Amcache_Raw_hive']
+# , 'appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1'
 
 # Load IngestTypes
 ingest_plugins = {}
