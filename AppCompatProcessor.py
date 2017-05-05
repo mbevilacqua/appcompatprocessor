@@ -23,7 +23,7 @@ import math
 try:
     from test.auxTest import build_fake_DB
 except ImportError:
-    print("Missing tests")
+    print("Missing tests folder or python faker module (won't be able to run unit tests)")
     pass
 
 try:
