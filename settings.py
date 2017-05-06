@@ -375,10 +375,11 @@ def init():
     rawOutput = False
 
     # todo: Try to dynamicaly construct this from DB schema
-    global EntriesFields
-    EntriesFields = namedlist("EntriesFields",
-        ["RowID", "HostID", "EntryType", "RowNumber", "LastModified", "LastUpdate", "FilePathID", "FilePath", "FileName",
+    global EntriesList
+    EntriesList = ["RowID", "HostID", "EntryType", "RowNumber", "LastModified", "LastUpdate", "FilePathID", "FilePath", "FileName",
          "Size", "ExecFlag", "SHA1", "FileDescription", "FirstRun", "Created", "Modified1", "Modified2", "LinkerTS",
          "Product", "Company", "PE_sizeofimage", "Version_number", "Version", "Language", "Header_hash", "PE_checksum",
-         "SwitchBackContext", "InstanceID", "Recon", "ReconSession"], default = None)
+         "SwitchBackContext", "InstanceID", "Recon", "ReconSession"]
+    global EntriesFields
+    EntriesFields = namedlist("EntriesFields", EntriesList , default = None)
 

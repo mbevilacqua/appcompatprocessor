@@ -1,7 +1,6 @@
 import settings
 import logging
 import multiprocessing
-import Queue
 import collections
 import os
 import re
@@ -15,6 +14,7 @@ import operator
 from datetime import timedelta
 import glob
 from collections import namedtuple
+from namedlist import namedlist
 
 logger = logging.getLogger(__name__)
 reBulk_compiled = None
@@ -413,13 +413,11 @@ class Consumer(multiprocessing.Process):
                 # Finished grabbing rowID, now we dump them all:
                 dumped_set = set()
                 for rowID in rowID_list:
-                    # Process resultSet from Producers:
-                    entry = self.DB.Query("SELECT HostName, LastModified, LastUpdate, %s, Size, \
-                        ExecFlag, RowID, EntryType, FirstRun, SHA1 FROM \
-                        Entries_FilePaths INNER JOIN Hosts ON Entries_FilePaths.HostID = Hosts.HostID WHERE RowID = '%s'" % (self.search_space, rowID))[0]
+                    # Grab entry data we want to save to the output file:
+                    record = retrieveSearchData(rowID, self.DB, self.search_space)
 
                     # De-dup results:
-                    entryMD5 = hashlib.md5(''.join([str(e) for e in [entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[9]]])).hexdigest()
+                    entryMD5 = hashlib.md5(''.join([str(e) for e in [record[0],record[1],record[2],record[3],record[4],record[5],record[9]]])).hexdigest()
                     if entryMD5 in dumped_set:
                         # print("Suppressing row %d" % entry[6])
                         with self.num_hits_suppressed.get_lock():
@@ -427,48 +425,38 @@ class Consumer(multiprocessing.Process):
                     else:
                         dumped_set.add(entryMD5)
                         # Re-filter against known bad individually to build histogram and highlight
+                        regex_hit_name = None
+                        search_space = None
                         if self.searchType == 'KNOWNBAD':
-                            regex_hit_name = ""
-                            search_space = ""
                             # Search for known_bad one by one and filter if required
                             for x in list(known_bad_search_terms):
-                                if re.compile(x.regex, re.IGNORECASE).search(str(entry[3])) is not None:
+                                if re.compile(x.regex, re.IGNORECASE).search(str(record.Search_Space)) is not None:
                                     if x.filter is not None:
-                                        if re.compile(x.filter, re.IGNORECASE).search(str(entry[3])) is not None:
+                                        if re.compile(x.filter, re.IGNORECASE).search(str(record.Search_Space)) is not None:
                                             regex_hit_name = x.name
                                             continue
                                     # 'u200b' is a zero width unicode character I have to use to avoid messy markdown highlighting:
-                                    search_space = re.compile('(.*)('+x.regex+')(.*)', re.I).sub(r'\1'+u'\u200b'+r'**'+u'\u200b'+r'\2'+u'\u200b'+'**'+u'\u200b'+r'\3', entry[3], re.IGNORECASE)
+                                    search_space = re.compile('(.*)('+x.regex+')(.*)', re.I).sub(r'\1'+u'\u200b'+r'**'+u'\u200b'+r'\2'+u'\u200b'+'**'+u'\u200b'+r'\3', record[3], re.IGNORECASE)
                                     # Add hit to know_bad hit counter:
                                     regex_hit_name = x.name
                                     hit_dict[x.regex][0] += 1
+
+                                    # We only report the match with the first regex from our set
                                     break
                         else:
-                            search_space = entry[3]
-                        # search_space will be "" if Producer hit but Consumer did not:
-                        if search_space == "":
-                            if regex_hit_name:
-                                logger.error("Producer/Consumer hit mismatch (consumer filtered) ! (report bug please) sig: %s - %s" % (regex_hit_name, entry[3]))
-                            else: logger.error("Producer/Consumer hit mismatch! (report bug please) - %s" % entry[3])
-                            pass
-                        else:
-                            sha1 = ""
-                            if entry[7] == settings.__APPCOMPAT__:
-                                entry_type = "Ap"
-                                date1 = entry[1]
+                            search_space = record.Search_Space
+                            # search_space will be None if Producer hit but Consumer did not:
+                            if search_space is None:
+                                if regex_hit_name:
+                                    logger.error(
+                                        "Producer/Consumer hit mismatch (consumer filtered) ! (report bug please) sig: %s - %s" % (
+                                            regex_hit_name, record.Search_Space))
+                                else:
+                                    logger.error("Producer/Consumer hit mismatch! (report bug please) - %s" % record.Search_Space)
+                                pass
                             else:
-                                entry_type = "Am"
-                                date1 = entry[8]
-                                if entry[9] is not None:
-                                    sha1 = " [" + entry[9] + "]"
-
-                            # Add name of regex that was hit to simplify searching and filtering
-                            if self.searchType == 'KNOWNBAD':
-                                markdown_file.write("%s %s %s %s %s %s %s (%s)\n" % (regex_hit_name, entry[0], date1, entry[2], search_space, entry[4], entry[5], entry_type))
-                                text_file.write("%s %s %s %s %s %s %s (%s)\n" % (regex_hit_name, entry[0], date1, entry[2], entry[3], entry[4], entry[5], entry_type))
-                            else:
-                                markdown_file.write("%s %s %s %s %s %s (%s)%s\n" % (entry[0], date1, entry[2], search_space, entry[4], entry[5], entry_type, sha1))
-                                text_file.write("%s %s %s %s %s %s (%s)%s\n" % (entry[0], date1, entry[2], entry[3], entry[4], entry[5], entry_type, sha1))
+                                # We dump the data to the output file/s
+                                saveSearchData(record, self.searchType, regex_hit_name, text_file, markdown_file)
 
                     # Update progress counter
                     with self.val.get_lock():
@@ -479,32 +467,77 @@ class Consumer(multiprocessing.Process):
             if x[0] > 0:
                 self.hitHistogram_queue.put((x[1], x[2], x[0]))
 
+def retrieveSearchData(rowID, DB, search_space):
+    queryRecordList = ["HostName","FilePath","FileName","LastModified","LastUpdate","Size","ExecFlag","RowID","EntryType","FirstRun","SHA1","Search_Space"]
+    queryRecordFields = namedlist("queryRecordList", queryRecordList, default=None)
+
+    # Grab all fields in the queryRecordList
+    selectQuery = ','.join(queryRecordList)
+    selectQuery = selectQuery.replace('Search_Space', search_space)
+    # Execute the query
+    entry = DB.Query("SELECT %s FROM Entries_FilePaths INNER JOIN Hosts \
+        ON Entries_FilePaths.HostID = Hosts.HostID WHERE RowID = '%s'" % (selectQuery, rowID))[0]
+
+    # todo: There has to be a more pythonic way to do this
+    record = queryRecordFields()
+    tmpDict = dict(zip(queryRecordList, entry))
+    i = 0
+    for field in queryRecordList:
+        record[i] = tmpDict[field]
+        i += 1
+    return record
+
+
+def saveSearchData(record, searchType, regex_hit_name, text_file, markdown_file):
+    sha1 = ""
+
+    if record.EntryType == settings.__APPCOMPAT__:
+        entry_type = "Ap"
+        date1 = record.LastModified
+    else:
+        entry_type = "Am"
+        date1 = record.FirstRun
+        if record.SHA1 is not None:
+            sha1 = " [" + record.SHA1 + "]"
+
+    # Add name of regex that was hit to simplify searching and filtering (on KnownBad searches only)
+    if searchType == 'KNOWNBAD':
+        markdown_file.write("%s %s %s %s %s %s %s (%s)\n" % (
+            regex_hit_name, record.HostName, date1, record.LastUpdate, record.Search_Space, record.Size, record.ExecFlag, entry_type))
+        text_file.write("%s %s %s %s %s %s %s (%s)\n" % \
+            (regex_hit_name, record.HostName, date1, record.LastUpdate, record.Search_Space, record.Size, record.ExecFlag, entry_type))
+    else:
+        markdown_file.write("%s %s %s %s %s %s (%s)%s\n" % (
+            record.HostName, date1, record.LastUpdate, record.FilePath + '\\' + record.FileName, record.Size, record.ExecFlag, entry_type, sha1))
+        text_file.write("%s %s %s %s %s %s (%s)%s\n" % \
+            (record.HostName, date1, record.LastUpdate, record.FilePath + '\\' + record.FileName, record.Size, record.ExecFlag, entry_type, sha1))
+
 
 def runIndexedSearch(dbfilenameFullPath, search_space, options):
     # todo: Handle duplicate hit supression
-    # todo: Match output of standard search
-    # todo: Store results in output file
     logger.info("Performing indexed search")
     DB = appDB.DBClass(dbfilenameFullPath, True, settings.__version__)
     DB.appInitDB()
     DB.appConnectDB()
 
     searchTerm = options.searchLiteral[0]
-    data = DB.Query("SELECT FilePath, FileName AS Hits FROM Entries_FilePaths WHERE %s == '%s';" % (search_space, searchTerm))
+    numHits = 0
+    # Run actual indexed query
+    data = DB.Query("SELECT RowID FROM Entries_FilePaths WHERE %s == '%s';" % (search_space, searchTerm))
     if data:
-        results = []
-        results.append(('cyan', "FileName,HitCount".split(',')))
-        for row in data:
-            results.append(('white', row))
-        outputcolum(results)
-
-        # Dump results to disk
+        # results = []
+        # results.append(('cyan', "FileName,HitCount".split(',')))
         with open(options.outputFile, "w") as text_file:
-            for row in results:
-                text_file.write("%s\n" %row)
+            with open(os.path.join(ntpath.dirname(options.outputFile), ntpath.splitext(options.outputFile)[0] + ".mmd"), "w") as markdown_file:
+                for row in data:
+                    # results.append(('white', row))
+                    record = retrieveSearchData(row[0], DB, search_space)
+                    saveSearchData(record, None, None, text_file, markdown_file)
+                    numHits += 1
+                # outputcolum(results)
 
-        return (len(results) - 1, 0, results)
-    else: return (0, 0, [])
+        return (numHits, 0, [])
+    else: return(0, 0, [])
 
 
 def appSearchMP(dbfilenameFullPath, searchType, search_space, options):
