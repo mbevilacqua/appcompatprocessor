@@ -277,18 +277,25 @@ def LoadRegexBulkSearch(file_full_path):
                 if ValidateRegex(clean_regex, clean_filter):
                     regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=clean_filter))
             else:
-                logger.warning("Warning: Looks like a bad formated line (maybe missing parethesis on filter?), skipping: %s" % line)
-        else:
-            if filter_delimiter not in line:
+                # Check if it's a simple regex that happens to have our delimiter somewhere in the pattern
                 m = line_regex.match(line)
                 if m:
                     # Convert regexes into non-capturing as they mess our MultiMarkDown tagging:
-                    clean_regex = m.group(2).replace('(?!', '[]').replace('(?:', '(').replace('(', '(?:').replace('[]', '(?!')
+                    clean_regex = m.group(2).replace('(?!', '[]').replace('(?:', '(').replace('(', '(?:').replace('[]',
+                                                                                                                  '(?!')
                     # Validate
                     if ValidateRegex(clean_regex, None):
                         regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
                 else:
                     logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
+        else:
+            m = line_regex.match(line)
+            if m:
+                # Convert regexes into non-capturing as they mess our MultiMarkDown tagging:
+                clean_regex = m.group(2).replace('(?!', '[]').replace('(?:', '(').replace('(', '(?:').replace('[]', '(?!')
+                # Validate
+                if ValidateRegex(clean_regex, None):
+                    regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
             else:
                 logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
 
@@ -436,7 +443,7 @@ class Consumer(multiprocessing.Process):
                                             regex_hit_name = x.name
                                             continue
                                     # 'u200b' is a zero width unicode character I have to use to avoid messy markdown highlighting:
-                                    search_space = re.compile('(.*)('+x.regex+')(.*)', re.I).sub(r'\1'+u'\u200b'+r'**'+u'\u200b'+r'\2'+u'\u200b'+'**'+u'\u200b'+r'\3', record[3], re.IGNORECASE)
+                                    search_space = re.compile('(.*)('+x.regex+')(.*)', re.I).sub(r'\1'+u'\u200b'+r'**'+u'\u200b'+r'\2'+u'\u200b'+'**'+u'\u200b'+r'\3', record.Search_Space, re.IGNORECASE)
                                     # Add hit to know_bad hit counter:
                                     regex_hit_name = x.name
                                     hit_dict[x.regex][0] += 1
