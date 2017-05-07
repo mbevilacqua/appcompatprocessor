@@ -77,6 +77,13 @@ def do_cprofile(func):
 
 class appLoadProd(MPEngineWorker):
 
+    def _notInRange(self, start, end, x):
+        """Return true if x is in the range [start, end]"""
+        if start <= end:
+            return not (start <= x <= end)
+        else:
+            return not (start <= x or x <= end)
+
     def do_work(self, next_task):
         self.logger.debug("do_work")
         rowsData = next_task()
@@ -88,44 +95,73 @@ class appLoadProd(MPEngineWorker):
             sanityCheckOK = True
             # todo: Bring back here sanity check on AMCache dates (as the SQLite driver would die later when querying invalid dates)
             try:
-                if sanityCheckOK:
+                # We use FirstRun as LastModified for AmCache entries
+                if x.EntryType == settings.__AMCACHE__:
+                    x.LastModified = x.FirstRun
+
+                # We use Modified2 as LastUpdate for AmCache entries
+                if x.EntryType == settings.__AMCACHE__:
+                    x.LastUpdate = x.Modified2
+
+                if type(x.LastModified) != datetime:
                     # todo: Maybe we don't need this after the ISO patch to ShimCacheParser?
                     if x.LastModified != "N/A" and x.LastModified != None:
                         x.LastModified = datetime.strptime(x.LastModified, "%Y-%m-%d %H:%M:%S")
                     else:
                         x.LastModified = datetime.min
 
+                if type(x.LastModified) != datetime:
                     if x.LastUpdate != "N/A" and x.LastUpdate != None:
                         x.LastUpdate = datetime.strptime(x.LastUpdate, "%Y-%m-%d %H:%M:%S")
                     else:
                         x.LastUpdate = datetime.min
 
-                    # We use FirstRun as LastModified for AmCache entries
-                    if x.EntryType == settings.__AMCACHE__:
-                        x.LastModified = x.FirstRun
-
-                    # We use Modified2 as LastUpdate for AmCache entries
-                    if x.EntryType == settings.__AMCACHE__:
-                        x.LastUpdate = x.Modified2
-
-                    # Sanitize things up (AmCache is full of these 'empty' entries which I don't have a clue what they are yet)
-                    if x.FilePath is None:
-                        x.FilePath = "None"
-                    else:
-                        x.FilePath = x.FilePath.replace("'", "''")
-                        # Trim out UNC path prefix
-                        x.FilePath = x.FilePath.replace("\\??\\", "")
-                        # Trim out SYSVOL path prefix
-                        x.FilePath = x.FilePath.replace("SYSVOL", "C:")
-                    if x.FileName is None:
-                        x.FileName = "None"
-                    else:
-                        x.FileName = x.FileName.replace("'", "''")
+                # Sanitize things up (AmCache is full of these 'empty' entries which I don't have a clue what they are yet)
+                if x.FilePath is None:
+                    x.FilePath = "None"
                 else:
+                    x.FilePath = x.FilePath.replace("'", "''")
+                    # Trim out UNC path prefix
+                    x.FilePath = x.FilePath.replace("\\??\\", "")
+                    # Trim out SYSVOL path prefix
+                    x.FilePath = x.FilePath.replace("SYSVOL", "C:")
+                if x.FileName is None:
+                    x.FileName = "None"
+                else:
+                    x.FileName = x.FileName.replace("'", "''")
+
+                if x.EntryType == settings.__AMCACHE__:
+                    # Sanity check AMCache dates:
+                    # We need to exclude these entries as the SQLite driver would die later when queried
+                    minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
+                    maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
+
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.FirstRun):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird FirstRun date, skipping entry: %s - %s - %s" % (x.HostID, x.FilePath, x.FirstRun))
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.Modified1):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird Modified1 date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.Modified1))
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.Modified2):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird Modified2 date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.Modified2))
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.LinkerTS):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird LinkerTS date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.LinkerTS))
+
+                if not sanityCheckOK:
                     rowsData.remove(x)
             except Exception as e:
-                self.logger.warning("Exception processing row (%s): %s" % (e.message, x))
-                sanityCheckOK = False
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                self.logger.warning("Exception processing row (%s): %s [%s / %s / %s]" % (e.message, x, exc_type, fname, exc_tb.tb_lineno))
                 pass
         return rowsData
 

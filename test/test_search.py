@@ -48,6 +48,19 @@ class TestAppSearchMP(TestCase):
 
         return count
 
+
+    def compare_output_files(self, filename1, filename2):
+        with codecs.open(filename1, 'r', 'UTF8') as inputFile1:
+            with codecs.open(filename2, 'r', 'UTF8') as inputFile2:
+                content1 = sorted(inputFile1.readlines())
+                content2 = sorted(inputFile2.readlines())
+                if len(content1) != len(content2): return False
+                for i in xrange(0,len(content1)):
+                    if content1[i] != content2[i]:
+                        return False
+        return True
+
+
     def dumpCSV(self, dbfilenameFullPath, dumpfilenameFullPath):
         DB = appDB.DBClass(dbfilenameFullPath, True, settings.__version__)
         DB.appInitDB()
@@ -60,13 +73,30 @@ class TestAppSearchMP(TestCase):
             file_handle.flush()
 
 
-    def test_AppCompat_LiteralSearch(self):
-        rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(15))
+    def test_AppCompat_LiteralSearchNoHits(self):
+        rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(20))
         with appDB.DBClass(self.testset1, settings.__version__) as DB:
             DB.appInitDB()
             conn = DB.appConnectDB()
 
-            for i in xrange(0,10):
+        # Get temp file name for the DB
+        with tempfile.NamedTemporaryFile(suffix='.txt', prefix='test_AppCompat_LiteralSearch', dir=tempfile.gettempdir()) as temp_file:
+            # Search
+            (num_hits, num_hits_suppressed, results) = main(["-o", temp_file.name, self.testset1, "search", "-F", rndFileName])
+            # Check we got at least as many as we added into the DB
+            self.assertTrue(num_hits == 0, sys._getframe().f_code.co_name + " num_hits: %d" % num_hits)
+            # Check output has the expected result
+            self.assertEquals(num_hits - num_hits_suppressed, self.count_lines_regex(temp_file.name, rndFileName),
+                              sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
+
+
+    def test_AppCompat_LiteralSearch(self):
+        rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(20))
+        with appDB.DBClass(self.testset1, settings.__version__) as DB:
+            DB.appInitDB()
+            conn = DB.appConnectDB()
+
+            for i in xrange(0,20):
                 entry_fields = settings.EntriesFields(EntryType=settings.__APPCOMPAT__,
                                                       FilePath='C:\Temp', FileName=rndFileName, Size=i, ExecFlag='True')
                 add_entry(DB, "TestHost01", entry_fields)
@@ -76,7 +106,7 @@ class TestAppSearchMP(TestCase):
             # Search
             (num_hits, num_hits_suppressed, results) = main(["-o", temp_file.name, self.testset1, "search", "-F", rndFileName])
             # Check we got at least as many as we added into the DB
-            self.assertTrue(num_hits >= 10, sys._getframe().f_code.co_name + " num_hits: %d" % num_hits)
+            self.assertTrue(num_hits == 20, sys._getframe().f_code.co_name + " num_hits: %d" % num_hits)
             # Check output has the expected result
             self.assertEquals(num_hits - num_hits_suppressed, self.count_lines_regex(temp_file.name, rndFileName),
                               sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
@@ -165,3 +195,95 @@ class TestAppSearchMP(TestCase):
             self.assertEquals(num_hits - num_hits_suppressed, self.count_lines_regex(temp_file.name, rndFileName),
                               sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
 
+
+    def test_AppCompat_IndexedSearchNoHits(self):
+        rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(20))
+        with appDB.DBClass(self.testset1, settings.__version__) as DB:
+            DB.appInitDB()
+            conn = DB.appConnectDB()
+
+        # Get temp file name for the DB
+        with tempfile.NamedTemporaryFile(suffix='.txt', prefix='test_AppCompat_IndexedSearch', dir=tempfile.gettempdir()) as temp_file:
+            # Search
+            (num_hits, num_hits_suppressed, results) = main(["-o", temp_file.name, self.testset1, "fsearch", "FileName", "-F", rndFileName])
+            # Check we got at least as many as we added into the DB
+            self.assertTrue(num_hits == 0, sys._getframe().f_code.co_name + " num_hits: %d" % num_hits)
+            # Check output has the expected result
+            self.assertEquals(num_hits - num_hits_suppressed, self.count_lines_regex(temp_file.name, rndFileName),
+                              sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
+
+
+
+    def test_AppCompat_IndexedSearch(self):
+        rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(20))
+        with appDB.DBClass(self.testset1, settings.__version__) as DB:
+            DB.appInitDB()
+            conn = DB.appConnectDB()
+
+            for i in xrange(0,20):
+                entry_fields = settings.EntriesFields(EntryType=settings.__APPCOMPAT__,
+                                                      FilePath='C:\Temp', FileName=rndFileName, Size=i, ExecFlag='True')
+                add_entry(DB, "TestHost01", entry_fields)
+
+        # Get temp file name for the DB
+        with tempfile.NamedTemporaryFile(suffix='.txt', prefix='test_AppCompat_IndexedSearch', dir=tempfile.gettempdir()) as temp_file:
+            # Search
+            (num_hits, num_hits_suppressed, results) = main(["-o", temp_file.name, self.testset1, "fsearch", "FileName", "-F", rndFileName])
+            # Check we got at least as many as we added into the DB
+            self.assertTrue(num_hits == 20, sys._getframe().f_code.co_name + " num_hits: %d" % num_hits)
+            # Check output has the expected result
+            self.assertEquals(num_hits - num_hits_suppressed, self.count_lines_regex(temp_file.name, rndFileName),
+                              sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
+
+
+    def test_AppCompat_IndexedSearchFilePath(self):
+        rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(20))
+        with appDB.DBClass(self.testset1, settings.__version__) as DB:
+            DB.appInitDB()
+            conn = DB.appConnectDB()
+
+            for i in xrange(0,20):
+                entry_fields = settings.EntriesFields(EntryType=settings.__APPCOMPAT__,
+                                                      FilePath='C:\\'+rndFileName, FileName="calc.exe", Size=i, ExecFlag='True')
+                add_entry(DB, "TestHost01", entry_fields)
+
+        # Get temp file name for the DB
+        with tempfile.NamedTemporaryFile(suffix='.txt', prefix='test_AppCompat_IndexedSearch', dir=tempfile.gettempdir()) as temp_file:
+            # Search
+            (num_hits, num_hits_suppressed, results) = main(["-o", temp_file.name, self.testset1, "fsearch", "FilePath", "-F", "C:\\"+rndFileName])
+            # Check we got at least as many as we added into the DB
+            self.assertTrue(num_hits == 20, sys._getframe().f_code.co_name + " num_hits: %d" % num_hits)
+            # Check output has the expected result
+            self.assertEquals(num_hits - num_hits_suppressed, self.count_lines_regex(temp_file.name, rndFileName),
+                              sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
+
+
+
+    def test_AppCompat_IndexedSearch2(self):
+        rndFileName = ''.join(random.choice(string.ascii_uppercase) for _ in range(20))
+        with appDB.DBClass(self.testset1, settings.__version__) as DB:
+            DB.appInitDB()
+            conn = DB.appConnectDB()
+
+            for i in xrange(0,20):
+                entry_fields = settings.EntriesFields(EntryType=settings.__APPCOMPAT__,
+                                                      FilePath='C:\Temp', FileName=rndFileName, Size=i, ExecFlag='True')
+                add_entry(DB, "TestHost01", entry_fields)
+
+        # Get temp file name for the DB
+        with tempfile.NamedTemporaryFile(suffix='.txt', prefix='test_AppCompat_IndexedSearch', dir=tempfile.gettempdir()) as temp_file_indexed:
+            with tempfile.NamedTemporaryFile(suffix='.txt', prefix='test_AppCompat_NormalSearch', dir=tempfile.gettempdir()) as temp_file_normal:
+                # Indexed Search
+                (num_hits, num_hits_suppressed, results) = main(["-o", temp_file_indexed.name, self.testset1, "fsearch", "FileName", "-F", rndFileName])
+                # Standard Search
+                (num_hits2, num_hits_suppressed2, results2) = main(["-o", temp_file_normal.name, self.testset1, "search", "-F", "\\" + rndFileName])
+                # Check we got the same number of hits
+                self.assertTrue(num_hits == num_hits2, sys._getframe().f_code.co_name + " num_hits: %d" % num_hits)
+                # Check output has the expected results
+                self.assertEquals(num_hits - num_hits_suppressed, self.count_lines_regex(temp_file_indexed.name, rndFileName),
+                                  sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
+                # Check output has the expected results
+                self.assertEquals(num_hits2 - num_hits_suppressed2, self.count_lines_regex(temp_file_normal.name, rndFileName),
+                                  sys._getframe().f_code.co_name + " Output regex count doesn't match num_hits!")
+                # Check standard and indexed search produced the same results
+                self.assertTrue(self.compare_output_files(temp_file_normal.name, temp_file_indexed.name), "Results differ!")
