@@ -1,6 +1,5 @@
 __author__ = 'matiasbevilacqua'
 
-from settings import logger_getDebugMode
 import logging
 from mpEngineProdCons import MPEngineProdCons
 from mpEngineWorker import MPEngineWorker
@@ -12,7 +11,6 @@ import ntpath
 from contextlib import closing
 import time
 import struct
-import hashlib
 from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size
 import appDB
 import settings
@@ -20,11 +18,9 @@ from ShimCacheParser import read_mir, write_it
 from AmCacheParser import _processAmCacheFile_StringIO
 import zipfile
 import contextlib
-import xml.etree.ElementTree as ET
 from datetime import timedelta, datetime
 import sys
 import traceback
-import signal
 import gc
 import cProfile
 from Ingest import appcompat_parsed
@@ -51,12 +47,12 @@ else: settings.__PYREGF__ = True
 
 logger = logging.getLogger(__name__)
 _tasksPerJob = 10
-supported_ingest_plugins = ['appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',
+supported_ingest_plugins = ['appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
+                            'appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',
                             'appcompat_mirregistryaudit.Appcompat_mirregistryaudit', 'amcache_mirlua_v1.Amcache_mirlua_v1',
                             'appcompat_mirlua_v2.Appcompat_mirlua_v2', 'appcompat_csv.Appcompat_csv',
                             'appcompat_redline.Appcompat_redline', 'appcompat_raw_hive.Appcompat_Raw_hive',
                             'appcompat_miracquisition.Appcompat_miracquisition', 'amcache_raw_hive.Amcache_Raw_hive']
-# , 'appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1'
 
 # Load IngestTypes
 ingest_plugins = {}
