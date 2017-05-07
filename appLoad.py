@@ -93,43 +93,7 @@ class appLoadProd(MPEngineWorker):
             # Check if we've been killed
             self.check_killed()
             sanityCheckOK = True
-            # todo: Bring back here sanity check on AMCache dates (as the SQLite driver would die later when querying invalid dates)
             try:
-                # We use FirstRun as LastModified for AmCache entries
-                if x.EntryType == settings.__AMCACHE__:
-                    x.LastModified = x.FirstRun
-
-                # We use Modified2 as LastUpdate for AmCache entries
-                if x.EntryType == settings.__AMCACHE__:
-                    x.LastUpdate = x.Modified2
-
-                if type(x.LastModified) != datetime:
-                    # todo: Maybe we don't need this after the ISO patch to ShimCacheParser?
-                    if x.LastModified != "N/A" and x.LastModified != None:
-                        x.LastModified = datetime.strptime(x.LastModified, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        x.LastModified = datetime.min
-
-                if type(x.LastModified) != datetime:
-                    if x.LastUpdate != "N/A" and x.LastUpdate != None:
-                        x.LastUpdate = datetime.strptime(x.LastUpdate, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        x.LastUpdate = datetime.min
-
-                # Sanitize things up (AmCache is full of these 'empty' entries which I don't have a clue what they are yet)
-                if x.FilePath is None:
-                    x.FilePath = "None"
-                else:
-                    x.FilePath = x.FilePath.replace("'", "''")
-                    # Trim out UNC path prefix
-                    x.FilePath = x.FilePath.replace("\\??\\", "")
-                    # Trim out SYSVOL path prefix
-                    x.FilePath = x.FilePath.replace("SYSVOL", "C:")
-                if x.FileName is None:
-                    x.FileName = "None"
-                else:
-                    x.FileName = x.FileName.replace("'", "''")
-
                 if x.EntryType == settings.__AMCACHE__:
                     # Sanity check AMCache dates:
                     # We need to exclude these entries as the SQLite driver would die later when queried
@@ -139,7 +103,8 @@ class appLoadProd(MPEngineWorker):
                     if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.FirstRun):
                         sanityCheckOK = False
                         settings.logger.warning(
-                            "Weird FirstRun date, skipping entry: %s - %s - %s" % (x.HostID, x.FilePath, x.FirstRun))
+                            "Weird FirstRun date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.FirstRun))
                     if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.Modified1):
                         sanityCheckOK = False
                         settings.logger.warning(
@@ -155,6 +120,50 @@ class appLoadProd(MPEngineWorker):
                         settings.logger.warning(
                             "Weird LinkerTS date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
                             x.HostID, x.FilePath, x.LinkerTS))
+
+                if sanityCheckOK:
+                    # We use FirstRun as LastModified for AmCache entries
+                    if x.EntryType == settings.__AMCACHE__:
+                        x.LastModified = x.FirstRun
+
+                    # We use Modified2 as LastUpdate for AmCache entries
+                    if x.EntryType == settings.__AMCACHE__:
+                        x.LastUpdate = x.Modified2
+
+                    if type(x.LastModified) != datetime:
+                        # todo: Maybe we don't need this after the ISO patch to ShimCacheParser?
+                        if x.LastModified != "N/A" and x.LastModified != None:
+                            if x.LastModified == '0000-00-00 00:00:00':
+                                settings.logger.warning("LastModified TS set to 0000-00-00 00:00:00 (%s)" % x)
+                                x.LastModified = datetime.min
+                            else:
+                                x.LastModified = datetime.strptime(x.LastModified, "%Y-%m-%d %H:%M:%S")
+                        else:
+                            x.LastModified = datetime.min
+
+                    if type(x.LastModified) != datetime:
+                        if x.LastUpdate != "N/A" and x.LastUpdate != None:
+                            if x.LastUpdate == '0000-00-00 00:00:00':
+                                settings.logger.warning("LastUpdate TS set to 0000-00-00 00:00:00 (%s)" % x)
+                                x.LastUpdate = datetime.min
+                            else:
+                                x.LastUpdate = datetime.strptime(x.LastUpdate, "%Y-%m-%d %H:%M:%S")
+                        else:
+                            x.LastUpdate = datetime.min
+
+                    # Sanitize things up (AmCache is full of these 'empty' entries which I don't have a clue what they are yet)
+                    if x.FilePath is None:
+                        x.FilePath = "None"
+                    else:
+                        x.FilePath = x.FilePath.replace("'", "''")
+                        # Trim out UNC path prefix
+                        x.FilePath = x.FilePath.replace("\\??\\", "")
+                        # Trim out SYSVOL path prefix
+                        x.FilePath = x.FilePath.replace("SYSVOL", "C:")
+                    if x.FileName is None:
+                        x.FileName = "None"
+                    else:
+                        x.FileName = x.FileName.replace("'", "''")
 
                 if not sanityCheckOK:
                     rowsData.remove(x)
