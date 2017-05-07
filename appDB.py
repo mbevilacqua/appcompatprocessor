@@ -339,6 +339,10 @@ class DBClass(object):
                 e.message = "SQLITE error: %s [%s]" % (e.message, query)
                 logger.exception(e.message)
                 raise
+            except Exception as e:
+                logger.exception(e.message)
+                traceback.print_exc(file=sys.stdout)
+                raise
             else:
                 return data[0][0]
 
@@ -348,13 +352,11 @@ class DBClass(object):
             try:
                 c.execute(query)
                 data = c.fetchall()
-            except sqlite3.Error as e:
+            except Exception as e:
                 e.message = "SQLITE error: %s [%s]" % (e.message, query)
                 logger.exception(e.message)
-                raise
-            except Exception as e:
-                # todo: Add exception to the logger
                 traceback.print_exc(file=sys.stdout)
+                raise
             else:
                 return data
 
