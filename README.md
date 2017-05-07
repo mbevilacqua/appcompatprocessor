@@ -66,6 +66,7 @@ The following ingestion formats are currently supported:
 > Host name is extracted from the hive itself.
 * AmCache from raw AmCache hives
 > File naming convention that you'll need to follow: \<HOSTNAME\>.hve.
+* Shim Shady in-memory extraction of ShimCache records (no enrichment)
 * AppCompat Mir RegistryAudit (XML)
 * AppCompat Mir LUA script (XML)
 * AppCompat from SYSTEM hives retrieved through a Mir FileAcquisition audit
