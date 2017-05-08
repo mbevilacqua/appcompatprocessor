@@ -455,11 +455,13 @@ class Consumer(multiprocessing.Process):
                                     logger.error("Producer/Consumer hit mismatch! (report bug please) - %s" % record.Search_Space)
                                 pass
 
-                    # We dump the data to the output file/s
-                    saveSearchData(record, self.searchType, regex_hit_name, text_file, markdown_file)
+                        # We dump the data to the output file/s
+                        saveSearchData(record, self.searchType, regex_hit_name, text_file, markdown_file)
+
                     # Update progress counter
                     with self.val.get_lock():
                         self.val.value += 1
+
         # Dump hit histogram
         time.sleep(0.5)
         for x in sorted(hit_dict.values(), key=operator.itemgetter(0), reverse=True):
