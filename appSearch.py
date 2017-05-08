@@ -436,7 +436,7 @@ class Consumer(multiprocessing.Process):
                                             regex_hit_name = x.name
                                             continue
                                     # 'u200b' is a zero width unicode character I have to use to avoid messy markdown highlighting:
-                                    search_space = re.compile('(.*)('+x.regex+')(.*)', re.I).sub(r'\1'+u'\u200b'+r'**'+u'\u200b'+r'\2'+u'\u200b'+'**'+u'\u200b'+r'\3', record[3], re.IGNORECASE)
+                                    search_space = re.compile('(.*)('+x.regex+')(.*)', re.I).sub(r'\1'+u'\u200b'+r'**'+u'\u200b'+r'\2'+u'\u200b'+'**'+u'\u200b'+r'\3', record.Search_Space, re.IGNORECASE)
                                     # Add hit to know_bad hit counter:
                                     regex_hit_name = x.name
                                     hit_dict[x.regex][0] += 1
