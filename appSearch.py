@@ -450,6 +450,8 @@ class Consumer(multiprocessing.Process):
 
                                     # We only report the match with the first regex from our set
                                     break
+                            # Program flow should never really make it here :)
+                            assert(False, "We're in trouble")
                         else:
                             search_space = record.Search_Space
                             # search_space will be None if Producer hit but Consumer did not:
