@@ -337,9 +337,17 @@ def GetIDForHosts(fileFullPathList, DB):
             if ingest_plugins[ingest_type].matchFileNameFilter(file_name_fullpath):
                 # Check magic:
                 try:
-                    if ingest_plugins[ingest_type].checkMagic(file_name_fullpath):
+                    magic_check = ingest_plugins[ingest_type].checkMagic(file_name_fullpath)
+                    if isinstance(magic_check, tuple):
+                        magic_check_res = magic_check[0]
+                        magic_check_err = magic_check[1]
+                    else: magic_check_res = magic_check
+                    if magic_check_res:
                         # Magic OK, go with this plugin
                         hostName = ingest_plugins[ingest_type].getHostName(file_name_fullpath)
+                        break
+                    if not magic_check_err:
+                        # If it doesn't pass the plugin magic test but the plugin reports it's ok to ignore
                         break
                 except Exception as e:
                     logger.exception("Error processing: %s (%s)" % (file_name_fullpath, str(e)))

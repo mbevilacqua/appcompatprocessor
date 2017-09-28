@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_mirShimShady_v1(Ingest):
     ingest_type = "appcompat_mirShimShady_v1"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_textxml.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_textxml.xml|_[A-Za-z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Appcompat_mirShimShady_v1, self).__init__()
@@ -36,6 +36,11 @@ class Appcompat_mirShimShady_v1(Ingest):
             root = etree.parse(file_object).getroot()
             if root.find('ShimCacheItem') is not None:
                 return True
+            else:
+                # Add second check to silence error reporting if we're looking at a Mir/HX issues document
+                if root.find('Issue') is not None:
+                    # Adding 2nd return value to report the file can be safely ignored (no error reporting required)
+                    return (False, False)
         except Exception as e:
             logger.exception("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
         finally:
