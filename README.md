@@ -39,8 +39,8 @@ You need Python 2.7+, libregf and pyregf (python bindings) from https://github.c
 The rest of the requirements you can handle with 'pip -r requirements.txt'.
 
 **Linux**
-You need Python 2.7+, libregf and pyregf (python bindings) from https://github.com/libyal/libregf
-The rest of the requirements should be easily setup with 'pip -r requirements.txt'
+You need Python 2.7+ and 'pip -r requirements.txt' should take care of everything for you.
+If you have issues with libregf or pyregf (python bindings for libregf) you can find them here: https://github.com/libyal/libregf
 
 Note: There seems to be an issue with some libregf versions on some linux environments in which libregf apparently provides file paths encoded in UTF16 (breaking sql inserts for us) when it used to do UTF8. Still trying to pinpoint when and why that happens to handle it correctly.
 
