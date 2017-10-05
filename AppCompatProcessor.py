@@ -1203,8 +1203,6 @@ def main(args):
     testsetParser.add_argument('num_hosts', type=int, nargs='?', default=10, help='number of fake hosts to populate (default 10)')
     options = oParser.parse_args(args)
 
-    # test
-
     # Setup the logger
     settings.logger_Sart(options.outputFile, options.verbose)
     logger = logging.getLogger(__name__)
