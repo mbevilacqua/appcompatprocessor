@@ -32,6 +32,11 @@ class Appcompat_mirShimShady_v1(Ingest):
     def checkMagic(self, file_name_fullpath):
         # As long as we find one ShimCacheItem entry we're declaring it good for us
         file_object = loadFile(file_name_fullpath)
+        # In HX due to the fila naming conventions we can't distinguish Issues docs based on file name. We need to perform a pre-check to silently discard them.
+
+        # Detect Issues documents from HX:
+        # ...
+
         try:
             root = etree.parse(file_object).getroot()
             if root.find('ShimCacheItem') is not None:
