@@ -107,16 +107,21 @@ def chunks(l, n):
 
 
 def outputcolum(data):
-    # Req. list of lists of fields per row
+    # Calculate terminal size
     maxStrLength = getTerminalWidth()
     if settings.rawOutput or stdout_redirect(): maxStrLength = 1000
+
+    # Calculate number of fields and maxStrLengthField
+    # todo: grab max size per field to do a more intelligent distribution of available term realestate
+    num_fields = len(data[len(data)-1][1])
+    maxStrLengthField = maxStrLength / num_fields
 
     # Truncate fields
     # todo: There has to be a better approach to this
     for ii in xrange(0, len(data)):
         tmpList = []
         for i in xrange(0, len(data[ii][1])):
-            tmpList.append(str(data[ii][1][i])[:maxStrLength] + (str(data[ii][1][i])[maxStrLength:] and '...'))
+            tmpList.append(str(data[ii][1][i])[:maxStrLengthField] + (str(data[ii][1][i])[maxStrLengthField:] and '...'))
         t1 = []
         t1.append(data[ii][0])
         t1.append(tuple(tmpList))

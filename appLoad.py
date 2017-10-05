@@ -1,6 +1,5 @@
 __author__ = 'matiasbevilacqua'
 
-from settings import logger_getDebugMode
 import logging
 from mpEngineProdCons import MPEngineProdCons
 from mpEngineWorker import MPEngineWorker
@@ -12,7 +11,6 @@ import ntpath
 from contextlib import closing
 import time
 import struct
-import hashlib
 from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size
 import appDB
 import settings
@@ -20,11 +18,9 @@ from ShimCacheParser import read_mir, write_it
 from AmCacheParser import _processAmCacheFile_StringIO
 import zipfile
 import contextlib
-import xml.etree.ElementTree as ET
 from datetime import timedelta, datetime
 import sys
 import traceback
-import signal
 import gc
 import cProfile
 from Ingest import appcompat_parsed
@@ -38,6 +34,7 @@ from Ingest import appcompat_redline
 from Ingest import appcompat_raw_hive
 from Ingest import appcompat_miracquisition
 from Ingest import amcache_raw_hive
+from Ingest import appcompat_mirShimShady_v1
 try:
     import pyregf
 except ImportError:
@@ -50,7 +47,8 @@ else: settings.__PYREGF__ = True
 
 logger = logging.getLogger(__name__)
 _tasksPerJob = 10
-supported_ingest_plugins = ['appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',
+supported_ingest_plugins = ['appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
+                            'appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',
                             'appcompat_mirregistryaudit.Appcompat_mirregistryaudit', 'amcache_mirlua_v1.Amcache_mirlua_v1',
                             'appcompat_mirlua_v2.Appcompat_mirlua_v2', 'appcompat_csv.Appcompat_csv',
                             'appcompat_redline.Appcompat_redline', 'appcompat_raw_hive.Appcompat_Raw_hive',
@@ -79,6 +77,13 @@ def do_cprofile(func):
 
 class appLoadProd(MPEngineWorker):
 
+    def _notInRange(self, start, end, x):
+        """Return true if x is in the range [start, end]"""
+        if start <= end:
+            return not (start <= x <= end)
+        else:
+            return not (start <= x or x <= end)
+
     def do_work(self, next_task):
         self.logger.debug("do_work")
         rowsData = next_task()
@@ -88,20 +93,35 @@ class appLoadProd(MPEngineWorker):
             # Check if we've been killed
             self.check_killed()
             sanityCheckOK = True
-            # todo: Bring back here sanity check on AMCache dates (as the SQLite driver would die later when querying invalid dates)
             try:
+                if x.EntryType == settings.__AMCACHE__:
+                    # Sanity check AMCache dates:
+                    # We need to exclude these entries as the SQLite driver would die later when queried
+                    minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
+                    maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
+
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.FirstRun):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird FirstRun date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.FirstRun))
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.Modified1):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird Modified1 date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.Modified1))
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.Modified2):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird Modified2 date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.Modified2))
+                    if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.LinkerTS):
+                        sanityCheckOK = False
+                        settings.logger.warning(
+                            "Weird LinkerTS date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                            x.HostID, x.FilePath, x.LinkerTS))
+
                 if sanityCheckOK:
-                    # todo: Maybe we don't need this after the ISO patch to ShimCacheParser?
-                    if x.LastModified != "N/A" and x.LastModified != None:
-                        x.LastModified = datetime.strptime(x.LastModified, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        x.LastModified = datetime.min
-
-                    if x.LastUpdate != "N/A" and x.LastUpdate != None:
-                        x.LastUpdate = datetime.strptime(x.LastUpdate, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        x.LastUpdate = datetime.min
-
                     # We use FirstRun as LastModified for AmCache entries
                     if x.EntryType == settings.__AMCACHE__:
                         x.LastModified = x.FirstRun
@@ -109,6 +129,27 @@ class appLoadProd(MPEngineWorker):
                     # We use Modified2 as LastUpdate for AmCache entries
                     if x.EntryType == settings.__AMCACHE__:
                         x.LastUpdate = x.Modified2
+
+                    if type(x.LastModified) != datetime:
+                        # todo: Maybe we don't need this after the ISO patch to ShimCacheParser?
+                        if x.LastModified != "N/A" and x.LastModified != None:
+                            if x.LastModified == '0000-00-00 00:00:00':
+                                settings.logger.warning("LastModified TS set to 0000-00-00 00:00:00 (%s)" % x)
+                                x.LastModified = datetime.min
+                            else:
+                                x.LastModified = datetime.strptime(x.LastModified, "%Y-%m-%d %H:%M:%S")
+                        else:
+                            x.LastModified = datetime.min
+
+                    if type(x.LastModified) != datetime:
+                        if x.LastUpdate != "N/A" and x.LastUpdate != None:
+                            if x.LastUpdate == '0000-00-00 00:00:00':
+                                settings.logger.warning("LastUpdate TS set to 0000-00-00 00:00:00 (%s)" % x)
+                                x.LastUpdate = datetime.min
+                            else:
+                                x.LastUpdate = datetime.strptime(x.LastUpdate, "%Y-%m-%d %H:%M:%S")
+                        else:
+                            x.LastUpdate = datetime.min
 
                     # Sanitize things up (AmCache is full of these 'empty' entries which I don't have a clue what they are yet)
                     if x.FilePath is None:
@@ -123,11 +164,13 @@ class appLoadProd(MPEngineWorker):
                         x.FileName = "None"
                     else:
                         x.FileName = x.FileName.replace("'", "''")
-                else:
+
+                if not sanityCheckOK:
                     rowsData.remove(x)
             except Exception as e:
-                self.logger.warning("Exception processing row (%s): %s" % (e.message, x))
-                sanityCheckOK = False
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                self.logger.warning("Exception processing row (%s): %s [%s / %s / %s]" % (e.message, x, exc_type, fname, exc_tb.tb_lineno))
                 pass
         return rowsData
 
@@ -294,9 +337,17 @@ def GetIDForHosts(fileFullPathList, DB):
             if ingest_plugins[ingest_type].matchFileNameFilter(file_name_fullpath):
                 # Check magic:
                 try:
-                    if ingest_plugins[ingest_type].checkMagic(file_name_fullpath):
+                    magic_check = ingest_plugins[ingest_type].checkMagic(file_name_fullpath)
+                    if isinstance(magic_check, tuple):
+                        magic_check_res = magic_check[0]
+                        magic_check_err = magic_check[1]
+                    else: magic_check_res = magic_check
+                    if magic_check_res:
                         # Magic OK, go with this plugin
                         hostName = ingest_plugins[ingest_type].getHostName(file_name_fullpath)
+                        break
+                    if not magic_check_err:
+                        # If it doesn't pass the plugin magic test but the plugin reports it's ok to ignore
                         break
                 except Exception as e:
                     logger.exception("Error processing: %s (%s)" % (file_name_fullpath, str(e)))

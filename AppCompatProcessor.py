@@ -23,7 +23,7 @@ import math
 try:
     from test.auxTest import build_fake_DB
 except ImportError:
-    print("Missing tests")
+    print("Missing tests folder or python faker module (won't be able to run unit tests)")
     pass
 
 try:
@@ -1258,7 +1258,6 @@ def main(args):
         return
     elif len(args) > 1:
         # Init DB if required
-        # dbfilenameFullPath = os.path.join(os.getcwd(), options.database_file)
         dbfilenameFullPath = options.database_file
         DB = appDB.DBClass(dbfilenameFullPath, (True if options.module_name == 'load' else False), settings.__version__)
         if DB.appInitDB():
