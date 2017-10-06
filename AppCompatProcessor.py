@@ -1129,12 +1129,13 @@ def appStack(DB, options):
 
     return results
 
+
 def rndsearch(DB, options):
     from zxcvbn.matching import omnimatch
     from zxcvbn.scoring import minimum_entropy_match_sequence
 
     # Grab data
-    rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FilePath = 'C:\Windows\' OR FilePath = 'C:\Windows\Temp'")
+    rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 12 OR LENGTH(FileName) = 20)")
     if (len(rows) > 0):
         for row in rows:
             filenameFull = row[0]
@@ -1147,11 +1148,40 @@ def rndsearch(DB, options):
             numConsonants = sum([1 for i in filename if i in set("bcdfghjklmnpqrstvwxyz")])
             numNumbers = sum([1 for i in filename if i in set("123456789")])
             numSpaces = sum([1 for i in filename if i in set(" ")])
-            if (length == 8 or length == 16) and max(numCaps, numSmallCaps) - min(numCaps, numSmallCaps) <= 2:
+            if max(numCaps, numSmallCaps) - min(numCaps, numSmallCaps) <= 2:
                 matches = omnimatch(filename, [])
                 result = minimum_entropy_match_sequence(filename, matches)
                 if result['score'] == 4:
-                    print("%f, %s, %s" % (result['crack_time'], filename, filenameFull))
+                    print("%s, %s, %.0f" % (filename, filenameFull, result['score']))
+
+
+
+def rndsearch2(DB, options):
+    from zxcvbn.matching import omnimatch
+    from zxcvbn.scoring import minimum_entropy_match_sequence
+
+    # Grab data
+    rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND LENGTH(FileName) = 11 AND (FilePath = 'C:\' OR FilePath = 'C:\Windows' OR FilePath = 'C:\Windows\Temp')")
+    if (len(rows) > 0):
+        print("Processing %d file names" % len(rows))
+        for row in rows:
+            filenameFull = row[0]
+            print filenameFull
+            # filenameFull = "qYXyeDEH.exe"
+            filename = os.path.splitext(filenameFull)[0]
+            fileext = os.path.splitext(filenameFull)[1]
+            length = len(filename)
+            # numCaps = sum([1 for i in filename if i in set("AEIOUBCDFGHJKLMNPQRSTVWXYZ")])
+            # numSmallCaps = sum([1 for i in filename if i in set("aeioubcdfghjklmnpqrstvwxyz")])
+            # numVowels = sum([1 for i in filename if i in set("aeiou")])
+            # numConsonants = sum([1 for i in filename if i in set("bcdfghjklmnpqrstvwxyz")])
+            # numNumbers = sum([1 for i in filename if i in set("123456789")])
+            # numSpaces = sum([1 for i in filename if i in set(" ")])
+            # if (length == 8 or length == 16) and max(numCaps, numSmallCaps) - min(numCaps, numSmallCaps) <= 2:
+            matches = omnimatch(filename, [])
+            result = minimum_entropy_match_sequence(filename, matches)
+            if result['score'] == 4:
+                print("%f, %s, %s" % (result['crack_time'], filename, filenameFull))
 
 
 
