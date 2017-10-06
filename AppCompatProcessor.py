@@ -696,7 +696,7 @@ def appTstomp(DB, options):
     ret = []
     num_hits = 0
     # todo: Add whitelist: C:\Windows\splwow64.exe
-    tsCopyCatCandidates = "'kernel32.dll', 'svchost.exe', 'ntdll.dll', 'shlwapi.dll', 'shell32.dll', 'msiexec.exe'"
+    tsCopyCatCandidates = "'kernel32.dll', 'svchost.exe', 'ntdll.dll', 'shlwapi.dll', 'shell32.dll', 'msiexec.exe', 'user.exe'"
     # Find correlations by LastModified between tsCopyCatCandidates in System32 and files that are not in System32 or SysWOW64
     # Process AppCompatCache
     if DB.CountConditional("Entries", ["EntryType"], [settings.__APPCOMPAT__]) > 0:
