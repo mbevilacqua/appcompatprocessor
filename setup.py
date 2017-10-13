@@ -14,7 +14,9 @@ setup(name='AppCompatProcessor',
     classifiers = ["Programming Language :: Python",
                  "License :: OSI Approved :: Apache Software License"],
     packages=['Ingest'],
-    scripts=['AppCompatProcessor.py', 'AmCacheParser.py', 'appAux.py', 'appDB.py', 'appLoad.py', 'appSearch.py', 'mpEngineProdCons.py', 'mpEngineWorker.py', 'namedlist.py', 'settings.py', 'ShimCacheParser.py', 'README.md', 'AppCompatSearch.txt', 'reconFiles.txt'],
+    scripts=['AppCompatProcessor.py'],
+    py_modules=['AmCacheParser', 'appAux', 'appDB', 'appLoad', 'appSearch', 'mpEngineProdCons', 'mpEngineWorker', 'namedlist', 'settings', 'ShimCacheParser_ACP'],
+    data_files=[('/etc/AppCompatProcessor', ['README.md', 'AppCompatSearch.txt', 'reconFiles.txt'])],
     install_requires=['pip>=1.5.4', 'setuptools>=3.3', 'argparse>=1.2.1', 'libregf-python>=20160109', 'future>=0.15.2', 'psutil>=4.3.1', 'python_Levenshtein>=0.10.0', 'termcolor>=1.1.0'],
     dependency_links=['git://github.com/williballenthin/python-registry@1a669eada6f7933798751e0cf482a9eb654c739b#egg=python-registry']
     )

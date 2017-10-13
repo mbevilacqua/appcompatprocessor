@@ -6,7 +6,7 @@ from appAux import loadFile
 import pyregf
 import settings
 import re
-from ShimCacheParser import read_from_hive, write_it
+from ShimCacheParser_ACP import read_from_hive, write_it
 
 logger = logging.getLogger(__name__)
 # Module to ingest AppCompat data

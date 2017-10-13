@@ -14,7 +14,7 @@ import struct
 from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size
 import appDB
 import settings
-from ShimCacheParser import read_mir, write_it
+from ShimCacheParser_ACP import read_mir, write_it
 from AmCacheParser import _processAmCacheFile_StringIO
 import zipfile
 # import contextlib
@@ -49,7 +49,6 @@ else: settings.__PYREGF__ = True
 
 logger = logging.getLogger(__name__)
 _tasksPerJob = 10
-# supported_ingest_plugins = ['amcache_miracquisition.Amcache_miracquisition']
 supported_ingest_plugins = ['issues_document.Issues_document', 'appcompat_hxregistryaudit.Appcompat_hxregistryaudit',
                             'appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
                             'appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',

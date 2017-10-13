@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from appAux import loadFile
 import hashlib
 import re
-from ShimCacheParser import read_mir, write_it
+from ShimCacheParser_ACP import read_mir, write_it
 
 logger = logging.getLogger(__name__)
 # Module to ingest AppCompat data in XML format
