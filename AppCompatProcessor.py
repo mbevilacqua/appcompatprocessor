@@ -64,19 +64,30 @@ __description__ = 'AppCompatProcessor (Beta ' + settings.__version__ + ' [' + se
 
 def ReconScan(DB, options):
     # Set Recon field in Entries for all recon commands in database
+    syntaxError = False
     conn = DB.appConnectDB()
     logger.info("Scanning for recon activity")
-    with open(os.path.join(os.path.dirname(__file__), "reconFiles.txt")) as f:
-        reconTerms = f.read().splitlines()
-    reconTerms = ','.join('"{0}"'.format(w) for w in reconTerms)
 
-    # Extremely weird query but it's way faster than a traditional approach
-    # This 0-zero's out everything and sets to 1 recon entries.
-    # X15 times faster for very big lists of reconTerm, unfortunately no progessbar possible :(
-    DB.ExecuteSpinner("UPDATE Entries SET Recon = (SELECT count(FileName) FROM Entries E2 \
-        WHERE Entries.RowID = E2.RowID and Entries.FileName IN (%s) ) > 0" % reconTerms)
+    # Find reconFiles.txt
+    recon_file = os.path.join(os.path.dirname(__file__), 'reconFiles.txt')
+    if not os.path.isfile(recon_file):
+        recon_file = '/etc/AppCompatProcessor/reconFiles.txt'
+        if not os.path.isfile(recon_file):
+            logger.error("Sorry, can't find know bad file: %s" % recon_file)
+            syntaxError = True
 
-    logger.info("Total number of potential recon commands detected: %d" % DB.CountReconEntries())
+    if not syntaxError:
+        with open(recon_file) as f:
+            reconTerms = f.read().splitlines()
+        reconTerms = ','.join('"{0}"'.format(w) for w in reconTerms)
+
+        # Extremely weird query but it's way faster than a traditional approach
+        # This 0-zero's out everything and sets to 1 recon entries.
+        # X15 times faster for very big lists of reconTerm, unfortunately no progessbar possible :(
+        DB.ExecuteSpinner("UPDATE Entries SET Recon = (SELECT count(FileName) FROM Entries E2 \
+            WHERE Entries.RowID = E2.RowID and Entries.FileName IN (%s) ) > 0" % reconTerms)
+
+        logger.info("Total number of potential recon commands detected: %d" % DB.CountReconEntries())
 
 
 def ReconTally(DB, options):
