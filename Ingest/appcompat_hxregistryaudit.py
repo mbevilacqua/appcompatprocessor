@@ -9,16 +9,16 @@ import re
 from ShimCacheParser import read_mir, write_it
 
 logger = logging.getLogger(__name__)
-# Module to ingest AppCompat data in XML format
-# File name and format is what you get from a Mir RegistryAudit
+# Module to ingest AppCompat data from an HX registry audit in XML format
+# File name and format is what you get from an HX RegistryAudit
+# todo: Untested module designed to work along HXTool, needs testing.
 
-
-class Appcompat_mirregistryaudit(Ingest):
-    ingest_type = "appcompat_mirregistryaudit"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32registry.xml)$"
+class Appcompat_hxregistryaudit(Ingest):
+    ingest_type = "appcompat_hxregistryaudit"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)_[A-Za-z0-9]{22}\.zip"
 
     def __init__(self):
-        super(Appcompat_mirregistryaudit, self).__init__()
+        super(Appcompat_hxregistryaudit, self).__init__()
 
     def calculateID(self, file_name_fullpath):
         instanceID = datetime.min
@@ -62,12 +62,13 @@ class Appcompat_mirregistryaudit(Ingest):
             file_object = loadFile(file_name_fullpath)
             try:
                 root = ET.parse(file_object).getroot()
-                # todo: relpace findall with find:
+                # todo: replace findall with find:
                 for reg_key in root.findall('RegistryItem'):
+                    if reg_key.find('ValueName') is None: continue
                     if reg_key.find('ValueName').text == "AppCompatCache":
                         return True
-            except Exception:
-                logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
+            except Exception as e:
+                logger.warning("[%s] Failed to parse XML for: %s [%s]" % (self.ingest_type, file_name_fullpath, e.message))
             finally:
                 file_object.close()
 

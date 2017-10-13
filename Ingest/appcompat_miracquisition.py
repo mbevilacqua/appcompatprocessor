@@ -47,10 +47,10 @@ class Appcompat_miracquisition(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         magic_ok = False
-        # Quick and dirty check
-        file_object = loadFile(file_name_fullpath)
-        tmp = struct.unpack('4s' , file_object.read(4))
-        if tmp[0] == "regf":
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'registry' in magic_id:
+            file_object = loadFile(file_name_fullpath)
             # Perform a deeper check using pyregf
             regf_file = pyregf.file()
             regf_file.open_file_object(file_object, "r")

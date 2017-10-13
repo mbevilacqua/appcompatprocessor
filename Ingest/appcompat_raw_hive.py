@@ -45,18 +45,17 @@ class Appcompat_Raw_hive(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         magic_ok = False
-        # Quick and dirty check
-        if pyregf.check_file_signature(file_name_fullpath):
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'registry' in magic_id:
             file_object = loadFile(file_name_fullpath)
-            tmp = struct.unpack('4s' , file_object.read(4))
-            if tmp[0] == "regf":
-                regf_file = pyregf.file()
-                regf_file.open_file_object(file_object, "r")
-                magic_key = regf_file.get_key_by_path(r'Select')
-                regf_file.close()
-                del regf_file
-                if magic_key is not None:
-                    magic_ok = True
+            regf_file = pyregf.file()
+            regf_file.open_file_object(file_object, "r")
+            magic_key = regf_file.get_key_by_path(r'Select')
+            regf_file.close()
+            del regf_file
+            if magic_key is not None:
+                magic_ok = True
 
             # Need to close these or the memory will never get freed:
             file_object.close()

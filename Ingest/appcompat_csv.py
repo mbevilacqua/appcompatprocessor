@@ -29,10 +29,13 @@ class Appcompat_csv(Ingest):
         super(Appcompat_csv, self).__init__()
 
     def checkMagic(self, file_name_fullpath):
-        file_object = loadFile(file_name_fullpath)
-        header = file_object.readline().strip()
-        if header == "Last Modified,Last Update,Path,File Size,Exec Flag":
-            return True
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'ShimCacheParser CSV' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            header = file_object.readline().strip()
+            if header == "Last Modified,Last Update,Path,File Size,Exec Flag":
+                return True
         return False
 
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):

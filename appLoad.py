@@ -17,12 +17,14 @@ import settings
 from ShimCacheParser import read_mir, write_it
 from AmCacheParser import _processAmCacheFile_StringIO
 import zipfile
-import contextlib
+# import contextlib
 from datetime import timedelta, datetime
 import sys
 import traceback
 import gc
 import cProfile
+from Ingest import issues_document
+from Ingest import appcompat_hxregistryaudit
 from Ingest import appcompat_parsed
 from Ingest import appcompat_mirregistryaudit
 from Ingest import amcache_miracquisition
@@ -47,7 +49,9 @@ else: settings.__PYREGF__ = True
 
 logger = logging.getLogger(__name__)
 _tasksPerJob = 10
-supported_ingest_plugins = ['appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
+# supported_ingest_plugins = ['amcache_miracquisition.Amcache_miracquisition']
+supported_ingest_plugins = ['issues_document.Issues_document', 'appcompat_hxregistryaudit.Appcompat_hxregistryaudit',
+                            'appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
                             'appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',
                             'appcompat_mirregistryaudit.Appcompat_mirregistryaudit', 'amcache_mirlua_v1.Amcache_mirlua_v1',
                             'appcompat_mirlua_v2.Appcompat_mirlua_v2', 'appcompat_csv.Appcompat_csv',
@@ -339,15 +343,11 @@ def GetIDForHosts(fileFullPathList, DB):
                 try:
                     magic_check = ingest_plugins[ingest_type].checkMagic(file_name_fullpath)
                     if isinstance(magic_check, tuple):
-                        magic_check_res = magic_check[0]
-                        magic_check_err = magic_check[1]
+                        logger.error("Report bug")
                     else: magic_check_res = magic_check
                     if magic_check_res:
                         # Magic OK, go with this plugin
                         hostName = ingest_plugins[ingest_type].getHostName(file_name_fullpath)
-                        break
-                    if not magic_check_err:
-                        # If it doesn't pass the plugin magic test but the plugin reports it's ok to ignore
                         break
                 except Exception as e:
                     logger.exception("Error processing: %s (%s)" % (file_name_fullpath, str(e)))

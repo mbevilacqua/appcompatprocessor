@@ -1,7 +1,6 @@
 import settings
 import logging
 from ingest import Ingest
-import xml.etree.ElementTree as ET
 from appAux import loadFile
 import hashlib
 import ntpath
@@ -31,25 +30,18 @@ class Appcompat_mirShimShady_v1(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         # As long as we find one ShimCacheItem entry we're declaring it good for us
-        file_object = loadFile(file_name_fullpath)
-        # In HX due to the fila naming conventions we can't distinguish Issues docs based on file name. We need to perform a pre-check to silently discard them.
-
-        # Detect Issues documents from HX:
-        # ...
-
-        try:
-            root = etree.parse(file_object).getroot()
-            if root.find('ShimCacheItem') is not None:
-                return True
-            else:
-                # Add second check to silence error reporting if we're looking at a Mir/HX issues document
-                if root.find('Issue') is not None:
-                    # Adding 2nd return value to report the file can be safely ignored (no error reporting required)
-                    return (False, False)
-        except Exception as e:
-            logger.exception("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
-        finally:
-            file_object.close()
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'XML' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            try:
+                root = etree.parse(file_object).getroot()
+                if root.find('ShimCacheItem') is not None:
+                    return True
+            except Exception as e:
+                logger.exception("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
+            finally:
+                file_object.close()
 
         return False
 

@@ -24,24 +24,27 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_mirlua_v2(Ingest):
     ingest_type = "appcompat_mirlua_v2"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32scripting-persistence.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_w32scripting-persistence\.xml|_[A-Za-z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Appcompat_mirlua_v2, self).__init__()
 
     def checkMagic(self, file_name_fullpath):
         # As long as we find one Appcompat PersistenceType we're declaring it good for us
-        file_object = loadFile(file_name_fullpath)
-        try:
-            root = etree.parse(file_object).getroot()
-            for reg_key in root.findall('AppCompatItemExtended'):
-                if reg_key.find('PersistenceType').text.lower() == "Appcompat".lower():
-                    return True
-        except Exception:
-            logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
-            #traceback.print_exc(file=sys.stdout)
-        finally:
-            file_object.close()
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'XML' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            try:
+                root = etree.parse(file_object).getroot()
+                # todo: replace findall with find:
+                for reg_key in root.findall('AppCompatItemExtended'):
+                    if reg_key.find('PersistenceType').text.lower() == "Appcompat".lower():
+                        return True
+            except Exception:
+                logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
+            finally:
+                file_object.close()
 
         return False
 

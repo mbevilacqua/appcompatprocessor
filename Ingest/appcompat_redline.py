@@ -57,13 +57,17 @@ class Appcompat_redline(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         # As long as we find one AppcompatCache key we're declaring it good for us
-        file_object = loadFile(file_name_fullpath)
-        root = ET.parse(file_object).getroot()
-        for reg_key in root.findall('RegistryItem'):
-            if reg_key.find('ValueName').text == "AppCompatCache":
-                file_object.close()
-                return True
-        file_object.close()
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'XML' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            root = ET.parse(file_object).getroot()
+            for reg_key in root.findall('RegistryItem'):
+                if reg_key.find('ValueName').text == "AppCompatCache":
+                    file_object.close()
+                    return True
+            file_object.close()
+
         return False
 
 

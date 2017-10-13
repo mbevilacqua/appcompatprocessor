@@ -1,4 +1,3 @@
-import settings
 import logging
 import struct
 from ingest import Ingest
@@ -7,7 +6,6 @@ import pyregf
 from AmCacheParser import _processAmCacheFile_StringIO
 import settings
 import ntpath
-from amcache_miracquisition import Amcache_miracquisition
 
 logger = logging.getLogger(__name__)
 # Module to ingest AmCache data
@@ -22,17 +20,12 @@ class Amcache_Raw_hive(Ingest):
     def __init__(self):
         super(Amcache_Raw_hive, self).__init__()
 
-    def getHostName(self, file_name_fullpath):
-        if not settings.__PYREGF__:
-            logger.warning("AmCache processing disabled (missing pyregf) skipping file: %s" % file_name_fullpath)
-        else: return super(Amcache_Raw_hive, self).getHostName(file_name_fullpath)
-
     def checkMagic(self, file_name_fullpath):
         magic_ok = False
-        # Quick and dirty check
-        file_object = loadFile(file_name_fullpath)
-        tmp = struct.unpack( '4s' , file_object.read(4) )
-        if tmp[0] == "regf":
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'registry' in magic_id:
+            file_object = loadFile(file_name_fullpath)
             # Perform a deeper check using pyregf
             regf_file = pyregf.file()
             regf_file.open_file_object(file_object, "r")
@@ -42,8 +35,8 @@ class Amcache_Raw_hive(Ingest):
             if magic_key is not None:
                 magic_ok = True
 
-        file_object.close()
-        del file_object
+            file_object.close()
+            del file_object
 
         return magic_ok
 
@@ -64,6 +57,11 @@ class Amcache_Raw_hive(Ingest):
         file_object.close()
         del file_object
         return instanceID
+
+    def getHostName(self, file_name_fullpath):
+        if not settings.__PYREGF__:
+            logger.warning("AmCache processing disabled (missing pyregf) skipping file: %s" % file_name_fullpath)
+        else: return super(Amcache_Raw_hive, self).getHostName(file_name_fullpath)
 
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         rowNumber = 0

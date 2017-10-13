@@ -61,15 +61,18 @@ class Appcompat_mirlua_v1(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         # As long as we find one Appcompat PersistenceType we're declaring it good for us
-        file_object = loadFile(file_name_fullpath)
-        try:
-            root = etree.parse(file_object).getroot()
-            for reg_key in root.findall('PersistenceItem'):
-                if reg_key.find('PersistenceType').text.lower() == "Appcompat".lower():
-                    return True
-        except Exception:
-            logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
-            #traceback.print_exc(file=sys.stdout)
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'XML' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            try:
+                root = etree.parse(file_object).getroot()
+                # todo: replace findall with find
+                for reg_key in root.findall('PersistenceItem'):
+                    if reg_key.find('PersistenceType').text.lower() == "Appcompat".lower():
+                        return True
+            except Exception:
+                logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
 
         return False
 
