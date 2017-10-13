@@ -110,8 +110,11 @@ Search for a literal term. Search space is limited to FilePath\FileName.
 
 Designed to perform massive searches for known bad and methodology regex terms, supports filtering to reduce FPs.
 Search space is limited to FilePath\FileName.
-If no file is provided as an argument it will search for KnownBad expressions shipped with the tool in 'AppCompatSearch.txt' as well as any additional files matching 'AppCompatSearch-.*' which can be used to supplement the default set of regular expressions with your own sets.
-Otherwise the provided KnownBad file will be used.
+If no file is provided as an argument it will search for KnownBad expressions shipped with ACP, otherwise the provided KnownBad file will be used.
+Bundled known bad expressions and filters are provided in `AppCompatSearch.txt`. When installed through setuptools the bundled 'AppCompatSearch.txt' will be deployed in `/etc/AppCompatProcessor`
+
+Additional files matching 'AppCompatSearch-.*' can be created to supplement the default set of regular expressions with your own sets, these will automatically picked up by ACP.
+
 
 > Most modules from AppCompatProcessor have been optimized and refactored to enable them to take advantage of modern multi-core processors.
 
