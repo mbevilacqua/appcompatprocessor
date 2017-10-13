@@ -6,6 +6,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding("utf-8")
 import os
+import ntpath
 import argparse
 from contextlib import closing
 import multiprocessing
@@ -1163,7 +1164,7 @@ def main(args):
     dumpParser = subparsers.add_parser('dump', help='Recreate AppCompat/AmCache dump for a given host')
     dumpParser.add_argument('host_name', type=str, help='hostname to dump')
     searchParser = subparsers.add_parser('search', help='Search module')
-    searchParser.add_argument('knownbad_file', nargs='?', default=os.path.join(os.path.dirname(__file__),"AppCompatSearch.txt"), help='file with known bad regular expressions, defaults to AppCompatSearch.txt delivered with the tool')
+    searchParser.add_argument('knownbad_file', nargs='?', help='file with known bad regular expressions, defaults to AppCompatSearch.txt delivered with the tool')
     searchParser.add_argument('-f', action='store', dest="searchRegex", nargs=1, help='regex search')
     searchParser.add_argument('-F', action='store', dest="searchLiteral", nargs=1, help='literal search')
     fsearchParser = subparsers.add_parser('fsearch', help='Field search module')
@@ -1273,6 +1274,24 @@ def main(args):
                     syntaxError = True
                 if options.module_name == "search":
                     search_space = "(FilePath || '\\' || FileName)"
+
+                    # Check if a search pattern was provided
+                    if not options.searchLiteral and not options.searchRegex:
+                        # Check if the user provided a known_bad file to use
+                        # default=os.path.join(os.path.dirname(__file__),"AppCompatSearch.txt")
+                        if not options.knownbad_file:
+                            # We first try to set the file to the same folder ACP is running from
+                            options.knownbad_file = os.path.join(os.path.dirname(__file__), 'AppCompatSearch.txt')
+                            if not os.path.isfile(options.knownbad_file):
+                                options.knownbad_file = '/etc/AppCompatProcessor/AppCompatSearch.txt'
+                                if not os.path.isfile(options.knownbad_file):
+                                    logger.error("Sorry, can't find know bad file: %s" % options.knownbad_file)
+                                    syntaxError = True
+                        else:
+                            # We check if the user provided known bad file exists
+                            if not os.path.isfile(options.knownbad_file):
+                                logger.error("Sorry, can't find know bad file: %s" % options.knownbad_file)
+
                 else:
                     if options.searchRegex and options.searchRegex[0] in ['>','<']:
                         logger.error("</> search term modifiers make no sense in a REGEX search")
