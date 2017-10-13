@@ -144,7 +144,7 @@ class appLoadProd(MPEngineWorker):
                         else:
                             x.LastModified = datetime.min
 
-                    if type(x.LastModified) != datetime:
+                    if type(x.LastUpdate) != datetime:
                         if x.LastUpdate != "N/A" and x.LastUpdate != None:
                             if x.LastUpdate == '0000-00-00 00:00:00':
                                 settings.logger.warning("LastUpdate TS set to 0000-00-00 00:00:00 (%s)" % x)
