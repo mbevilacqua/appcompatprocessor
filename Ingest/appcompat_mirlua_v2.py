@@ -96,9 +96,10 @@ class Appcompat_mirlua_v2(Ingest):
                         # Aggregate some tags when required
                         tag_dict[tag_prefix + e.tag] = tag_dict[tag_prefix + e.tag] + ", " + e.text
 
+
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         rowNumber = 0
-        check_tags = ['LastModified', 'AppCompatPath', 'ExecutionFlag']
+        check_tags = ['LastModified', 'AppCompatPath']
         try:
             xml_data = loadFile(file_fullpath)
             for event, element in etree.iterparse(xml_data, events=("end",)):

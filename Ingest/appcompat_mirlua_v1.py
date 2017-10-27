@@ -95,9 +95,10 @@ class Appcompat_mirlua_v1(Ingest):
                         # Aggregate some tags when required
                         tag_dict[tag_prefix + e.tag] = tag_dict[tag_prefix + e.tag] + ", " + e.text
 
+
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         rowNumber = 0
-        check_tags = ['LastModified', 'FilePath', 'ExecutionFlag']
+        check_tags = ['LastModified', 'FilePath']
         # the 'end' event signifies when the end of the XML node has been reached,
         # and therefore when all values can be parsed
         try:
