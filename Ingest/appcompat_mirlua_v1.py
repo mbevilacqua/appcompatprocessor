@@ -123,10 +123,10 @@ class Appcompat_mirlua_v1(Ingest):
                     # If the entry is valid do some housekeeping:
                     if not skip_entry:
                         if tag_dict['ExecutionFlag'] == '1':
-                            tmpExexFlag = True
+                            tmpExecFlag = True
                         elif tag_dict['ExecutionFlag'] == '0':
-                            tmpExexFlag = False
-                        else: tmpExexFlag = tag_dict['ExecutionFlag']
+                            tmpExecFlag = False
+                        else: tmpExecFlag = tag_dict['ExecutionFlag']
                         namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
                               RowNumber=rowNumber,
                               InstanceID=instanceID,
@@ -135,7 +135,7 @@ class Appcompat_mirlua_v1(Ingest):
                               FileName=ntpath.basename(tag_dict['FilePath']),
                               FilePath=ntpath.dirname(tag_dict['FilePath']),
                               Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
-                              ExecFlag=tmpExexFlag)
+                              ExecFlag=tmpExecFlag)
                         rowsData.append(namedrow)
                         rowNumber += 1
             else:
