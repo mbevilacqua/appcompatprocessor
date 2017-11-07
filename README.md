@@ -17,7 +17,7 @@ AppCompatProcessor has been designed to extract additional value from enterprise
 ### Installation:
 
 **OSX**
-You need Python 2.7+, libregf and pyregf (python bindings)
+You need Python 2.7+, libregf and pyregf (python bindings) from https://github.com/libyal/libregf
 
 -Option A Source ditribution package from https://github.com/libyal/libregf/releases
 - ./configure --enable-python && make
@@ -39,8 +39,8 @@ You need Python 2.7+, libregf and pyregf (python bindings)
 The rest of the requirements you can handle with 'pip -r requirements.txt'.
 
 **Linux**
-You need Python 2.7+, libregf and pyregf (python bindings) from https://github.com/libyal/libregf
-The rest of the requirements should be easily setup with 'pip -r requirements.txt'
+You need Python 2.7+ and 'pip -r requirements.txt' should take care of everything for you.
+If you have issues with libregf or pyregf (python bindings for libregf) you can find them here: https://github.com/libyal/libregf
 
 Note: There seems to be an issue with some libregf versions on some linux environments in which libregf apparently provides file paths encoded in UTF16 (breaking sql inserts for us) when it used to do UTF8. Still trying to pinpoint when and why that happens to handle it correctly.
 
@@ -66,6 +66,7 @@ The following ingestion formats are currently supported:
 > Host name is extracted from the hive itself.
 * AmCache from raw AmCache hives
 > File naming convention that you'll need to follow: \<HOSTNAME\>.hve.
+* Shim Shady in-memory extraction of ShimCache records (no enrichment)
 * AppCompat Mir RegistryAudit (XML)
 * AppCompat Mir LUA script (XML)
 * AppCompat from SYSTEM hives retrieved through a Mir FileAcquisition audit
@@ -109,8 +110,11 @@ Search for a literal term. Search space is limited to FilePath\FileName.
 
 Designed to perform massive searches for known bad and methodology regex terms, supports filtering to reduce FPs.
 Search space is limited to FilePath\FileName.
-If no file is provided as an argument it will search for KnownBad expressions shipped with the tool in 'AppCompatSearch.txt' as well as any additional files matching 'AppCompatSearch-.*' which can be used to supplement the default set of regular expressions with your own sets.
-Otherwise the provided KnownBad file will be used.
+If no file is provided as an argument it will search for KnownBad expressions shipped with ACP, otherwise the provided KnownBad file will be used.
+Bundled known bad expressions and filters are provided in `AppCompatSearch.txt`. When installed through setuptools the bundled 'AppCompatSearch.txt' will be deployed in `/etc/AppCompatProcessor`
+
+Additional files matching 'AppCompatSearch-.*' can be created to supplement the default set of regular expressions with your own sets, these will automatically picked up by ACP.
+
 
 > Most modules from AppCompatProcessor have been optimized and refactored to enable them to take advantage of modern multi-core processors.
 

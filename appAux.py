@@ -52,15 +52,13 @@ def checkLock(filefullpath):
     print "File not locked"
 
 
-def loadFile(fileFullPath):
+def loadFile(fileFullPath, max_chunk_size = 0):
     """Abstracts loading a regular file and a file from within a zip archive.
-    Note that this is convenient but extremely inefficient as we're parsing the zip header for each file we pull from the zip!
-
     Args:
         fileFullPath (str): Full path to file to load
-
+        max_chunk_size (int): maximum number of bytes to be read from the file
     Returns:
-        data (StringIO): Data read from fileFullPath
+        file_pointer (StringIO): Data read from fileFullPath
     """
     logger.debug("Loading file %s" % fileFullPath)
     if ".zip" in fileFullPath:
@@ -75,21 +73,25 @@ def loadFile(fileFullPath):
                 else:
                     logger.error("Invalid ZIP file found: %s" % fileFullPath)
                     return None
-            # Extract data using the zipCache:
-            data = StringIO(zipCache[zip_container].read(file_relative_path))
+
+            # Extract file_pointer from zip:
+            file_pointer = StringIO(zipCache[zip_container].read(file_relative_path))
+            if max_chunk_size != 0: file_pointer = StringIO(file_pointer.read(max_chunk_size))
         else:
             logger.error("Issue extracting container and relative path from ZIP file: %s" % fileFullPath)
     else:
+            # Extract file_pointer:
             input_file = open(fileFullPath, 'rb')
-            data = StringIO(input_file.read())
-    assert(data is not None)
+            if max_chunk_size == 0:
+                file_pointer = StringIO(input_file.read())
+            else: file_pointer = StringIO(input_file.read(max_chunk_size))
+    assert(file_pointer is not None)
 
-    #Extract RAW header
-    logger.debug("Read %d bytes [%s]" % (getFileSize(data), toHex(data.read(20))))
+    logger.debug("Read %d bytes [%s]" % (getFileSize(file_pointer), toHex(file_pointer.read(20))))
     # Return file pointer to pos 0
-    data.seek(0, 0)
+    file_pointer.seek(0, 0)
 
-    return data
+    return file_pointer
 
 
 def getTerminalWidth():
@@ -107,16 +109,21 @@ def chunks(l, n):
 
 
 def outputcolum(data):
-    # Req. list of lists of fields per row
+    # Calculate terminal size
     maxStrLength = getTerminalWidth()
     if settings.rawOutput or stdout_redirect(): maxStrLength = 1000
+
+    # Calculate number of fields and maxStrLengthField
+    # todo: grab max size per field to do a more intelligent distribution of available term realestate
+    num_fields = len(data[len(data)-1][1])
+    maxStrLengthField = maxStrLength / num_fields
 
     # Truncate fields
     # todo: There has to be a better approach to this
     for ii in xrange(0, len(data)):
         tmpList = []
         for i in xrange(0, len(data[ii][1])):
-            tmpList.append(str(data[ii][1][i])[:maxStrLength] + (str(data[ii][1][i])[maxStrLength:] and '...'))
+            tmpList.append(str(data[ii][1][i])[:maxStrLengthField] + (str(data[ii][1][i])[maxStrLengthField:] and '...'))
         t1 = []
         t1.append(data[ii][0])
         t1.append(tuple(tmpList))

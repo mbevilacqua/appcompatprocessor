@@ -9,17 +9,16 @@ import re
 from ShimCacheParser_ACP import read_mir, write_it
 
 logger = logging.getLogger(__name__)
-# Module to ingest AppCompat data from Redline audits
-# Hostname is extracter from parent folder name!
-# Note: This is exactly the same as the appcompat_xml ingest module but with a different file_name_filter
+# Module to ingest AppCompat data from an HX registry audit in XML format
+# File name and format is what you get from an HX RegistryAudit
+# todo: Untested module designed to work along HXTool, needs testing.
 
-
-class Appcompat_redline(Ingest):
-    ingest_type = "appcompat_redline"
-    file_name_filter = '(?:.*)(?:\/|\\\)RedlineAudits(?:\/|\\\)(.*)(?:\/|\\\)\d{14}(?:\/|\\\)w32registryapi\..{22}$'
+class Appcompat_hxregistryaudit(Ingest):
+    ingest_type = "appcompat_hxregistryaudit"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)_[A-Za-z0-9]{22}\.zip"
 
     def __init__(self):
-        super(Appcompat_redline, self).__init__()
+        super(Appcompat_hxregistryaudit, self).__init__()
 
     def calculateID(self, file_name_fullpath):
         instanceID = datetime.min
@@ -61,12 +60,17 @@ class Appcompat_redline(Ingest):
         magic_id = self.id_filename(file_name_fullpath)
         if 'XML' in magic_id:
             file_object = loadFile(file_name_fullpath)
-            root = ET.parse(file_object).getroot()
-            for reg_key in root.findall('RegistryItem'):
-                if reg_key.find('ValueName').text == "AppCompatCache":
-                    file_object.close()
-                    return True
-            file_object.close()
+            try:
+                root = ET.parse(file_object).getroot()
+                # todo: replace findall with find:
+                for reg_key in root.findall('RegistryItem'):
+                    if reg_key.find('ValueName') is None: continue
+                    if reg_key.find('ValueName').text == "AppCompatCache":
+                        return True
+            except Exception as e:
+                logger.warning("[%s] Failed to parse XML for: %s [%s]" % (self.ingest_type, file_name_fullpath, e.message))
+            finally:
+                file_object.close()
 
         return False
 

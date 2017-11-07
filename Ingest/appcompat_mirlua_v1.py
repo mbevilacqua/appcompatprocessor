@@ -61,15 +61,18 @@ class Appcompat_mirlua_v1(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         # As long as we find one Appcompat PersistenceType we're declaring it good for us
-        file_object = loadFile(file_name_fullpath)
-        try:
-            root = etree.parse(file_object).getroot()
-            for reg_key in root.findall('PersistenceItem'):
-                if reg_key.find('PersistenceType').text.lower() == "Appcompat".lower():
-                    return True
-        except Exception:
-            logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
-            #traceback.print_exc(file=sys.stdout)
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'XML' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            try:
+                root = etree.parse(file_object).getroot()
+                # todo: replace findall with find
+                for reg_key in root.findall('PersistenceItem'):
+                    if reg_key.find('PersistenceType').text.lower() == "Appcompat".lower():
+                        return True
+            except Exception:
+                logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
 
         return False
 
@@ -92,9 +95,10 @@ class Appcompat_mirlua_v1(Ingest):
                         # Aggregate some tags when required
                         tag_dict[tag_prefix + e.tag] = tag_dict[tag_prefix + e.tag] + ", " + e.text
 
+
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         rowNumber = 0
-        check_tags = ['LastModified', 'FilePath', 'ExecutionFlag']
+        check_tags = ['LastModified', 'FilePath']
         # the 'end' event signifies when the end of the XML node has been reached,
         # and therefore when all values can be parsed
         try:
@@ -119,10 +123,10 @@ class Appcompat_mirlua_v1(Ingest):
                     # If the entry is valid do some housekeeping:
                     if not skip_entry:
                         if tag_dict['ExecutionFlag'] == '1':
-                            tmpExexFlag = True
+                            tmpExecFlag = True
                         elif tag_dict['ExecutionFlag'] == '0':
-                            tmpExexFlag = False
-                        else: tmpExexFlag = tag_dict['ExecutionFlag']
+                            tmpExecFlag = False
+                        else: tmpExecFlag = tag_dict['ExecutionFlag']
                         namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
                               RowNumber=rowNumber,
                               InstanceID=instanceID,
@@ -131,7 +135,7 @@ class Appcompat_mirlua_v1(Ingest):
                               FileName=ntpath.basename(tag_dict['FilePath']),
                               FilePath=ntpath.dirname(tag_dict['FilePath']),
                               Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
-                              ExecFlag=tmpExexFlag)
+                              ExecFlag=tmpExecFlag)
                         rowsData.append(namedrow)
                         rowNumber += 1
             else:

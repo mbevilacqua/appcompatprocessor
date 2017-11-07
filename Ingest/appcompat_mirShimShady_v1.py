@@ -1,7 +1,6 @@
 import settings
 import logging
 from ingest import Ingest
-import xml.etree.ElementTree as ET
 from appAux import loadFile
 import hashlib
 import ntpath
@@ -17,63 +16,41 @@ except ImportError:
 else: settings.__CELEMENTREE__ = True
 
 logger = logging.getLogger(__name__)
-# Module to ingest AppCompat data
-# File name and format is what you get from a customized Mir AppCompat LUA audit
+# Module to ingest AppCompat data pulled by the Mir Shim Shady acquisition module
+# File name and format is what you get from a customized Mir Shim Shady sweep
 # Note: Enrichment file data is not currently pulled for this format
 
 
-class Appcompat_mirlua_v2(Ingest):
-    ingest_type = "appcompat_mirlua_v2"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_w32scripting-persistence\.xml|_[A-Za-z0-9]{22}\.xml)$"
+class Appcompat_mirShimShady_v1(Ingest):
+    ingest_type = "appcompat_mirShimShady_v1"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_textxml.xml|_[A-Za-z0-9]{22}\.xml)$"
 
     def __init__(self):
-        super(Appcompat_mirlua_v2, self).__init__()
+        super(Appcompat_mirShimShady_v1, self).__init__()
 
     def checkMagic(self, file_name_fullpath):
-        # As long as we find one Appcompat PersistenceType we're declaring it good for us
+        # As long as we find one ShimCacheItem entry we're declaring it good for us
         # Check magic
         magic_id = self.id_filename(file_name_fullpath)
         if 'XML' in magic_id:
             file_object = loadFile(file_name_fullpath)
             try:
                 root = etree.parse(file_object).getroot()
-                # todo: replace findall with find:
-                for reg_key in root.findall('AppCompatItemExtended'):
-                    if reg_key.find('PersistenceType').text.lower() == "Appcompat".lower():
-                        return True
-            except Exception:
-                logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
+                if root.find('ShimCacheItem') is not None:
+                    return True
+            except Exception as e:
+                logger.exception("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
             finally:
                 file_object.close()
 
         return False
 
     def calculateID(self, file_name_fullpath):
-        # Get the creation date for the first PersistenceItem in the audit (they will all be the same)
-        instanceID = datetime.min
-        tmp_instanceID = None
-
-        try:
-            file_object = loadFile(file_name_fullpath)
-            root = ET.parse(file_object).getroot()
-            file_object.close()
-            reg_key = root.find('AppCompatItemExtended')
-            reg_modified = reg_key.get('created')
-            try:
-                tmp_instanceID = datetime.strptime(reg_modified, "%Y-%m-%dT%H:%M:%SZ")
-            except ValueError as e:
-                tmp_instanceID = datetime.max
-                logger.warning("Invalid reg_modified date found!: %s (%s)" % (reg_modified, file_name_fullpath))
-            instanceID = tmp_instanceID
-        except Exception:
-            traceback.print_exc(file=sys.stdout)
-
-        # If we found no PersistenceItem date we go with plan B (but most probably this is corrupt and will fail later)
-        if instanceID is None:
-            file_object = loadFile(file_name_fullpath)
-            content = file_object.read()
-            instanceID = hashlib.md5(content).hexdigest()
-            file_object.close()
+        # We don't have a useful TS here so we hash it to calculate an ID
+        file_object = loadFile(file_name_fullpath)
+        content = file_object.read()
+        instanceID = hashlib.md5(content).hexdigest()
+        file_object.close()
 
         return instanceID
 
@@ -88,14 +65,19 @@ class Appcompat_mirlua_v2(Ingest):
                     self._processElement(e, tag_dict, tag_prefix + e.tag + '_')
                 else:
                     if tag_prefix + e.tag not in tag_dict:
-                        if tag_prefix + e.tag == "ExecutionFlag":
-                            tag_dict[tag_prefix + e.tag] = "True" if e.text == "1" else "False" if e.text == "0" else e.text
+                        if tag_prefix + e.tag == "FullPath":
+                            tag_dict[tag_prefix + 'AppCompatPath'] = e.text
+                            continue
+                        if tag_prefix + e.tag == "Modified":
+                            tag_dict[tag_prefix + 'LastModified'] = e.text
+                            continue
+                        if tag_prefix + e.tag == "Executed":
+                            tag_dict[tag_prefix + 'ExecutionFlag'] = "True" if e.text == "true" else "False" if e.text == "false" else e.text
                         else:
                             tag_dict[tag_prefix + e.tag] = e.text
                     else:
                         # Aggregate some tags when required
                         tag_dict[tag_prefix + e.tag] = tag_dict[tag_prefix + e.tag] + ", " + e.text
-
 
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         rowNumber = 0
@@ -105,14 +87,14 @@ class Appcompat_mirlua_v2(Ingest):
             for event, element in etree.iterparse(xml_data, events=("end",)):
                 skip_entry = False
                 tag_dict = {}
-                if element.tag == "AppCompatItemExtended":
+                if element.tag == "ShimCacheItem":
                     self._processElement(element, tag_dict)
 
                     # Check we have everything we need and ignore entries with critical XML errors on them
                     for tag in check_tags:
                         if tag not in tag_dict or tag_dict[tag] is None:
                                 if 'AppCompatPath' in tag_dict:
-                                    logger.warning("Malformed tag [%s: %s] in %s, entry: %s (skipping entry)" % (tag, tag_dict[tag], tag_dict['AppCompatPath'], file_fullpath))
+                                    logger.warning("Malformed tag [%s] in %s, entry: %s (skipping entry)" % (tag, tag_dict['AppCompatPath'], file_fullpath))
                                 else:
                                     logger.warning(
                                         "Malformed tag [%s: %s] in %s, entry: Unknown (skipping entry)" % (tag, tag_dict[tag], file_fullpath))
@@ -121,11 +103,11 @@ class Appcompat_mirlua_v2(Ingest):
 
                     # If the entry is valid do some housekeeping:
                     if not skip_entry:
-                        if tag_dict['ExecutionFlag'] == '1':
-                            tmpExecFlag = True
-                        elif tag_dict['ExecutionFlag'] == '0':
-                            tmpExecFlag = False
-                        else: tmpExecFlag = tag_dict['ExecutionFlag']
+                        if 'ExecutionFlag' in tag_dict:
+                            tmpExexFlag = tag_dict['ExecutionFlag']
+                        else:
+                            # Note that Shim Shady does not extract ExecFlag on some platforms (at least Windows 10).
+                            tmpExexFlag = 'unk'
                         namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
                               RowNumber=rowNumber,
                               InstanceID=instanceID,
@@ -134,7 +116,7 @@ class Appcompat_mirlua_v2(Ingest):
                               FileName=ntpath.basename(tag_dict['AppCompatPath']),
                               FilePath=ntpath.dirname(tag_dict['AppCompatPath']),
                               Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
-                              ExecFlag=tmpExecFlag)
+                              ExecFlag=tmpExexFlag)
                         rowsData.append(namedrow)
                         rowNumber += 1
             else:

@@ -277,18 +277,25 @@ def LoadRegexBulkSearch(file_full_path):
                 if ValidateRegex(clean_regex, clean_filter):
                     regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=clean_filter))
             else:
-                logger.warning("Warning: Looks like a bad formated line (maybe missing parethesis on filter?), skipping: %s" % line)
-        else:
-            if filter_delimiter not in line:
+                # Check if it's a simple regex that happens to have our delimiter somewhere in the pattern
                 m = line_regex.match(line)
                 if m:
                     # Convert regexes into non-capturing as they mess our MultiMarkDown tagging:
-                    clean_regex = m.group(2).replace('(?!', '[]').replace('(?:', '(').replace('(', '(?:').replace('[]', '(?!')
+                    clean_regex = m.group(2).replace('(?!', '[]').replace('(?:', '(').replace('(', '(?:').replace('[]',
+                                                                                                                  '(?!')
                     # Validate
                     if ValidateRegex(clean_regex, None):
                         regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
                 else:
                     logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
+        else:
+            m = line_regex.match(line)
+            if m:
+                # Convert regexes into non-capturing as they mess our MultiMarkDown tagging:
+                clean_regex = m.group(2).replace('(?!', '[]').replace('(?:', '(').replace('(', '(?:').replace('[]', '(?!')
+                # Validate
+                if ValidateRegex(clean_regex, None):
+                    regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
             else:
                 logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
 
@@ -443,6 +450,8 @@ class Consumer(multiprocessing.Process):
 
                                     # We only report the match with the first regex from our set
                                     break
+                            # Program flow should never really make it here :)
+                            assert(False, "We're in trouble")
                         else:
                             search_space = record.Search_Space
                             # search_space will be None if Producer hit but Consumer did not:

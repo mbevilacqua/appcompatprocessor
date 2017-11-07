@@ -17,6 +17,8 @@ class Appcompat_parsed(Ingest):
         super(Appcompat_parsed, self).__init__()
 
     def checkMagic(self, file_name_fullpath):
+        # todo: Implement
+        logger.error("Method not implemented")
         return True
 
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
