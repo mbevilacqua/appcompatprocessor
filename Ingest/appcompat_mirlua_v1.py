@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_mirlua_v1(Ingest):
     ingest_type = "appcompat_mirlua_v1"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32scripting-persistence.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32scripting-persistence.xml)$"
 
     def __init__(self):
         super(Appcompat_mirlua_v1, self).__init__()

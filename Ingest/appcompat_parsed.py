@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_parsed(Ingest):
     ingest_type = "appcompat_parsed"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32registry(\.xml){0,1}-shimcache.txt)$"
+    file_name_filter = "(?:.*)(?:\/|\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32registry(\.xml){0,1}-shimcache.txt)$"
 
     def __init__(self):
         super(Appcompat_parsed, self).__init__()
