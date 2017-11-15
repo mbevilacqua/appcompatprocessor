@@ -116,20 +116,25 @@ class Amcache_mirlua_v1(Ingest):
 
                     # If the entry is valid do some housekeeping:
                     if not skip_entry:
-                        if tag_dict['ExecutionFlag'] == '1':
-                            tmpExexFlag = True
-                        elif tag_dict['ExecutionFlag'] == '0':
-                            tmpExexFlag = False
-                        else: tmpExexFlag = tag_dict['ExecutionFlag']
+                        if 'ExecutionFlag' in tag_dict:
+                            if tag_dict['ExecutionFlag'] == '1':
+                                tmpExecFlag = True
+                            elif tag_dict['ExecutionFlag'] == '0':
+                                tmpExecFlag = False
+                            else: tmpExecFlag = tag_dict['ExecutionFlag']
+                        else:
+                            # todo: Not all OS's have exec flag. Need to change the schema to reflect those cases!
+                            tmpExecFlag = False
+
                         namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
-                              RowNumber=rowNumber,
-                              InstanceID=instanceID,
-                              LastModified=(tag_dict['LastModified'].replace("T"," ").replace("Z","") if 'LastModified' in tag_dict else '0001-01-01 00:00:00'),
-                              LastUpdate=(tag_dict['LastUpdate'].replace("T"," ").replace("Z","") if 'LastUpdate' in tag_dict else '0001-01-01 00:00:00'),
-                              FileName=ntpath.basename(tag_dict['AppCompatPath']),
-                              FilePath=ntpath.dirname(tag_dict['AppCompatPath']),
-                              Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
-                              ExecFlag=tmpExexFlag)
+                          RowNumber=rowNumber,
+                          InstanceID=instanceID,
+                          LastModified=(tag_dict['LastModified'].replace("T"," ").replace("Z","") if 'LastModified' in tag_dict else '0001-01-01 00:00:00'),
+                          LastUpdate=(tag_dict['LastUpdate'].replace("T"," ").replace("Z","") if 'LastUpdate' in tag_dict else '0001-01-01 00:00:00'),
+                          FileName=ntpath.basename(tag_dict['AppCompatPath']),
+                          FilePath=ntpath.dirname(tag_dict['AppCompatPath']),
+                          Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
+                          ExecFlag=tmpExecFlag)
                         rowsData.append(namedrow)
                         rowNumber += 1
             else:
