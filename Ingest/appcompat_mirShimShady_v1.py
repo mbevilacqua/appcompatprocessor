@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_mirShimShady_v1(Ingest):
     ingest_type = "appcompat_mirShimShady_v1"
-    file_name_filter = "(?:.*)(?:\/|\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_textxml.xml|_[A-Za-z0-9]{22}\.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_textxml.xml|_[A-Za-z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Appcompat_mirShimShady_v1, self).__init__()

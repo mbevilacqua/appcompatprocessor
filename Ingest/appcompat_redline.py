@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_redline(Ingest):
     ingest_type = "appcompat_redline"
-    file_name_filter = '(?:.*)(?:\/|\\)RedlineAudits(?:\/|\\\)(.*)(?:\/|\\\)\d{14}(?:\/|\\\)w32registryapi\..{22}$'
+    file_name_filter = '(?:.*)(?:\/|\\\)RedlineAudits(?:\/|\\\)(.*)(?:\/|\\\)\d{14}(?:\/|\\\)w32registryapi\..{22}$'
 
     def __init__(self):
         super(Appcompat_redline, self).__init__()

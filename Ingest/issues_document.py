@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class Issues_document(Ingest):
     ingest_type = "issues_document"
-    file_name_filter = "(?:.*)(?:\/|\\)(.*)_[a-zA-Z0-9]{22}\.xml$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)_[a-zA-Z0-9]{22}\.xml$"
 
     def __init__(self):
         super(Issues_document, self).__init__()

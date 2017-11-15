@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Amcache_Raw_hive(Ingest):
     ingest_type = "amcache_raw_hive"
-    file_name_filter = "(?:.*)(?:\/|\\)(.*)\.hve$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)\.hve$"
 
     def __init__(self):
         super(Amcache_Raw_hive, self).__init__()

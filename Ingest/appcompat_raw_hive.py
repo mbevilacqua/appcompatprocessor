@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_Raw_hive(Ingest):
     ingest_type = "appcompat_raw_hive"
-    file_name_filter = "(?:.*)(?:\/|\\)SYSTEM.*$"
+    file_name_filter = "(?:.*)(?:\/|\\\)SYSTEM.*$"
 
     def __init__(self):
         super(Appcompat_Raw_hive, self).__init__()

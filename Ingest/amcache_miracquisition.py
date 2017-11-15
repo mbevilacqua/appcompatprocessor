@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Amcache_miracquisition(Ingest):
     ingest_type = "amcache_miracquisition"
-    file_name_filter = "(?:.*)(?:\/|\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_octet-stream\.xml|_[a-zA-Z0-9]{22}\.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_octet-stream\.xml|_[a-zA-Z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Amcache_miracquisition, self).__init__()

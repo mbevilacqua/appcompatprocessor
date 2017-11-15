@@ -23,7 +23,7 @@ csv.register_dialect(
 
 class Appcompat_csv(Ingest):
     ingest_type = "appcompat_csv"
-    file_name_filter = "(?:.*)(?:\/|\\)(.*)\.csv$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)\.csv$"
 
     def __init__(self):
         super(Appcompat_csv, self).__init__()

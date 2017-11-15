@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_miracquisition(Ingest):
     ingest_type = "appcompat_miracquisition"
-    file_name_filter = "(?:.*)(?:\/|\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_octet-stream.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_octet-stream.xml)$"
 
     def __init__(self):
         super(Appcompat_miracquisition, self).__init__()
