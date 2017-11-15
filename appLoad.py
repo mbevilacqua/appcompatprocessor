@@ -499,7 +499,6 @@ def appLoadMP(pathToLoad, dbfilenameFullPath, maxCores, governorOffFlag):
     file_filter = '|'.join([v.getFileNameFilter() for k,v in ingest_plugins.iteritems()])
     # Add zip extension
     file_filter += "|.*\.zip"
-    print file_filter
 
     # Check if we're loading Redline data
     if os.path.isdir(pathToLoad) and os.path.basename(pathToLoad).lower() == 'RedlineAudits'.lower():
