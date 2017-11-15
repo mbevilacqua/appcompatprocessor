@@ -108,14 +108,27 @@ class Appcompat_mirlua_v2(Ingest):
                 if element.tag == "AppCompatItemExtended":
                     self._processElement(element, tag_dict)
 
+                    # From time to time we get some entries with no real data on them for some unknown reason, skip for now
+                    if 'AppCompatPath' in tag_dict:
+                        if tag_dict['AppCompatPath'] == 'N/A':
+                            logger.debug("ShimCache entry with no AppCompatPath [ControlSetSeq: %s], entry: %s. (skipping entry)" % (tag_dict['ControlSetSeq'], file_fullpath))
+                            break
+
                     # Check we have everything we need and ignore entries with critical XML errors on them
                     for tag in check_tags:
                         if tag not in tag_dict or tag_dict[tag] is None:
+                            if tag not in tag_dict:
+                                if 'AppCompatPath' in tag_dict:
+                                    logger.warning("Missing tag [%s] in %s, entry: %s (skipping entry)" % (tag, tag_dict['AppCompatPath'], file_fullpath))
+                                else:
+                                    logger.warning("Malformed tag [%s] in %s, entry: Unknown (skipping entry)" % (tag, file_fullpath))
+                                skip_entry = True
+                                break
+                            if tag_dict[tag] is None:
                                 if 'AppCompatPath' in tag_dict:
                                     logger.warning("Malformed tag [%s: %s] in %s, entry: %s (skipping entry)" % (tag, tag_dict[tag], tag_dict['AppCompatPath'], file_fullpath))
                                 else:
-                                    logger.warning(
-                                        "Malformed tag [%s: %s] in %s, entry: Unknown (skipping entry)" % (tag, tag_dict[tag], file_fullpath))
+                                    logger.warning("Malformed tag [%s: %s] in %s, entry: Unknown (skipping entry)" % (tag, tag_dict[tag], file_fullpath))
                                 skip_entry = True
                                 break
 

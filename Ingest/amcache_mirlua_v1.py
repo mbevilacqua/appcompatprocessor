@@ -19,7 +19,6 @@ else: settings.__CELEMENTREE__ = True
 logger = logging.getLogger(__name__)
 # Module to ingest AmCache data
 # File name and format is what you get from a customized Mir AmCache LUA audit
-# Warning: Use of this module is not recommended at this point in time
 
 
 class Amcache_mirlua_v1(Ingest):
@@ -94,7 +93,7 @@ class Amcache_mirlua_v1(Ingest):
 
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         rowNumber = 0
-        check_tags = ['AmCacheLastModified2', 'AmCacheFilePath']
+        check_tags = ['AmCacheLastModified2']
         try:
             xml_data = loadFile(file_fullpath)
             for event, element in etree.iterparse(xml_data, events=("end",)):
@@ -105,14 +104,31 @@ class Amcache_mirlua_v1(Ingest):
 
                     # Check we have everything we need and ignore entries with critical XML errors on them
                     for tag in check_tags:
-                        if tag not in tag_dict or tag_dict[tag] is None:
-                                if 'AppCompatPath' in tag_dict:
-                                    logger.warning("Malformed tag [%s: %s] in %s, entry: %s (skipping entry)" % (tag, tag_dict[tag], tag_dict['AppCompatPath'], file_fullpath))
+                        if tag not in tag_dict:
+                                if 'AmCacheFilePath' in tag_dict:
+                                    logger.warning("Missing tag [%s] in %s, entry: %s (skipping entry)" % (tag, tag_dict['AmCacheFilePath'], file_fullpath))
                                 else:
-                                    logger.warning(
-                                        "Malformed tag [%s: %s] in %s, entry: Unknown (skipping entry)" % (tag, tag_dict[tag], file_fullpath))
+                                    logger.warning("Malformed tag [%s] in %s, entry: Unknown (skipping entry)" % (tag, file_fullpath))
                                 skip_entry = True
                                 break
+                        if tag_dict[tag] is None:
+                                if 'AmCacheFilePath' in tag_dict:
+                                    logger.warning("Malformed tag [%s: %s] in %s, entry: %s (skipping entry)" % (tag, tag_dict[tag], tag_dict['AmCacheFilePath'], file_fullpath))
+                                else:
+                                    logger.warning("Malformed tag [%s: %s] in %s, entry: Unknown (skipping entry)" % (tag, tag_dict[tag], file_fullpath))
+                                skip_entry = True
+                                break
+
+                    # Some entries in AmCache do not refer to files per se (like installed program entries)
+                    # We don't have much use for them right now but let's keep the data there until I figure what to do with them
+                    if 'AmCacheFilePath' not in tag_dict:
+                        if 'ProgramName' in tag_dict:
+                            tag_dict['AmCacheFilePath'] = tag_dict['ProgramName']
+                        else:
+                            # If we have no thing we can use here we skip the entry for now
+                            # todo: pretty-print the tag_dict to the log file
+                            logger.warning("AmCache entry with no AppCompatPath or ProgramName. (skipping entry)")
+                            break
 
                     # If the entry is valid do some housekeeping:
                     if not skip_entry:
@@ -131,8 +147,8 @@ class Amcache_mirlua_v1(Ingest):
                           InstanceID=instanceID,
                           LastModified=(tag_dict['LastModified'].replace("T"," ").replace("Z","") if 'LastModified' in tag_dict else '0001-01-01 00:00:00'),
                           LastUpdate=(tag_dict['LastUpdate'].replace("T"," ").replace("Z","") if 'LastUpdate' in tag_dict else '0001-01-01 00:00:00'),
-                          FileName=ntpath.basename(tag_dict['AppCompatPath']),
-                          FilePath=ntpath.dirname(tag_dict['AppCompatPath']),
+                          FileName=ntpath.basename(tag_dict['AmCacheFilePath']),
+                          FilePath=ntpath.dirname(tag_dict['AmCacheFilePath']),
                           Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
                           ExecFlag=tmpExecFlag)
                         rowsData.append(namedrow)
