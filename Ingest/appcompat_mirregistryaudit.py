@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_mirregistryaudit(Ingest):
     ingest_type = "appcompat_mirregistryaudit"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32registry.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_w32registry.xml|_[A-Za-z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Appcompat_mirregistryaudit, self).__init__()

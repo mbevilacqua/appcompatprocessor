@@ -36,7 +36,7 @@ You need Python 2.7+, libregf and pyregf (python bindings) from https://github.c
 - python setup.py install
 
 
-The rest of the requirements you can handle with 'pip -r requirements.txt'.
+The rest of the requirements you can handle with 'pip install -r requirements.txt'.
 
 **Linux**
 You need Python 2.7+ and 'pip -r requirements.txt' should take care of everything for you.
