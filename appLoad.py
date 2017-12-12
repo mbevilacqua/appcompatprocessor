@@ -443,7 +443,9 @@ def processArchives(filename, file_filter):
 
             for zipped_filename in zipFileList:
                 if re.match(file_filter, zipped_filename):
+                    logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
                     files_to_process.append(os.path.join(zip_archive_filename, zipped_filename))
+                else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
             if len(files_to_process) == 0:
                 logger.error("No valid files found!")
         except (IOError, zipfile.BadZipfile, struct.error), err:
