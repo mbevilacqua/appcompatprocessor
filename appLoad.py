@@ -316,6 +316,7 @@ def CalculateInstanceID(file_fullpath, ingest_plugin):
 
 
 def GetIDForHosts(fileFullPathList, DB):
+    # todo: With the improved magic_checks this now takes quite a while (multiprocess or at least add some GUI feedback)
     # Returns: (filePath, instanceID, hostname, hostID, ingest_type)
     hostsTest = {}
     hostsProcess = []
@@ -443,7 +444,9 @@ def processArchives(filename, file_filter):
 
             for zipped_filename in zipFileList:
                 if re.match(file_filter, zipped_filename):
+                    logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
                     files_to_process.append(os.path.join(zip_archive_filename, zipped_filename))
+                else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
             if len(files_to_process) == 0:
                 logger.error("No valid files found!")
         except (IOError, zipfile.BadZipfile, struct.error), err:
@@ -463,9 +466,9 @@ def searchFolders(pathToLoad, file_filter):
             files_to_process.extend(searchFolders(os.path.join(pathToLoad, dir), file_filter))
         for filename in filenames:
             if re.match(file_filter, os.path.join(pathToLoad, filename)):
+                logger.debug("Adding file to process: %s" % os.path.join(pathToLoad, filename))
                 files_to_process.extend(processArchives(os.path.join(pathToLoad, filename), file_filter))
-            else:
-                logger.warning("Skiping file, no ingest plugin found to process: %s" % filename)
+            else: logger.warning("Skipping file, no ingest plugin found to process: %s" % filename)
         break
     return files_to_process
 
