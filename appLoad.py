@@ -316,7 +316,8 @@ def CalculateInstanceID(file_fullpath, ingest_plugin):
 
 
 def GetIDForHosts(fileFullPathList, DB):
-    # todo: With the improved magic_checks this now takes quite a while (multiprocess or at least add some GUI feedback)
+    # todo: With the improved magic_checks this now takes quite a while
+    # todo: multiprocess, merge into host ID generation or at least add some GUI feedback.
     # Returns: (filePath, instanceID, hostname, hostID, ingest_type)
     hostsTest = {}
     hostsProcess = []
@@ -328,6 +329,7 @@ def GetIDForHosts(fileFullPathList, DB):
         hostName = None
         ingest_type = None
         loop_counter = 0
+        logger.info("Extracting hostname from: %s" % file_name_fullpath)
         while True:
             if loop_counter > len(ingest_plugins_types_stack):
                 # We ignore empty file from hosts with no appcompat data
