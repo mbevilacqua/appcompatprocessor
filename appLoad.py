@@ -174,6 +174,9 @@ class appLoadProd(MPEngineWorker):
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 self.logger.warning("Exception processing row (%s): %s [%s / %s / %s]" % (e.message, x, exc_type, fname, exc_tb.tb_lineno))
+
+                # Skip row:
+                rowsData.remove(x)
                 pass
         return rowsData
 
