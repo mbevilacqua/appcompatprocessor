@@ -74,7 +74,8 @@ class Amcache_Raw_hive(Ingest):
                 RowNumber = rowNumber,
                 FilePath = (None if r.path == None else ntpath.dirname(r.path)),
                 FileName = (None if r.path == None else ntpath.basename(r.path)),
-                Size = r.size, ExecFlag = 'True',
+                Size = r.size,
+                ExecFlag = 'True',
                 SHA1 = (None if r.sha1 == None else r.sha1[4:]),
                 FileDescription = r.file_description,
                 FirstRun = r.first_run,
@@ -90,7 +91,8 @@ class Amcache_Raw_hive(Ingest):
                 Language = r.language,
                 Header_hash = r.header_hash,
                 PE_checksum = r.pe_checksum,
-                SwitchBackContext = r.switchbackcontext, InstanceID = instanceID)
+                SwitchBackContext = r.switchbackcontext,
+                InstanceID = instanceID)
             rowsData.append(namedrow)
             rowNumber += 1
 
