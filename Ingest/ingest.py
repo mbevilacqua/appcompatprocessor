@@ -52,7 +52,7 @@ class Ingest(object):
         # Perform deeper check to distinguish subtype
         if 'IssueList' in file_chunk.getvalue(): magic_id += '+ Mir IssueList file'
         elif 'batchresult' in file_chunk.getvalue(): magic_id += '+ Mir batchresult file'
-        elif 'AmCacheItem' in file_chunk.getvalue(): magic_id += '+ Mir AmCache Lua_v2 file'
+        elif 'AmCacheItem' in file_chunk.getvalue(): magic_id += '+ Mir AmCache Lua_v1 file'
         elif 'itemList' in file_chunk.getvalue(): magic_id += '+ Mir itemList file'
 
 

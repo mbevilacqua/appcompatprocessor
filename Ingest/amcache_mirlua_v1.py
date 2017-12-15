@@ -34,22 +34,23 @@ class Amcache_mirlua_v1(Ingest):
         instanceID = datetime.min
         tmp_instanceID = None
 
-        try:
-            file_object = loadFile(file_name_fullpath)
-            root = ET.parse(file_object).getroot()
-            file_object.close()
-            reg_key = root.find('AmCacheItem')
-            reg_modified = reg_key.get('created')
-            try:
-                tmp_instanceID = datetime.strptime(reg_modified, "%Y-%m-%dT%H:%M:%SZ")
-            except ValueError as e:
-                tmp_instanceID = datetime.max
-                logger.warning("Invalid reg_modified date found!: %s (%s)" % (reg_modified, file_name_fullpath))
-            instanceID = tmp_instanceID
-        except Exception:
-            traceback.print_exc(file=sys.stdout)
+        # Parsing these huge xml files to grab the last modified data as an instance ID is slower than just hashing the whole thing:
+        # try:
+        #     file_object = loadFile(file_name_fullpath)
+        #     root = ET.parse(file_object).getroot()
+        #     file_object.close()
+        #     reg_key = root.find('AmCacheItem')
+        #     reg_modified = reg_key.get('created')
+        #     try:
+        #         tmp_instanceID = datetime.strptime(reg_modified, "%Y-%m-%dT%H:%M:%SZ")
+        #     except ValueError as e:
+        #         tmp_instanceID = datetime.max
+        #         logger.warning("Invalid reg_modified date found!: %s (%s)" % (reg_modified, file_name_fullpath))
+        #     instanceID = tmp_instanceID
+        # except Exception:
+        #     traceback.print_exc(file=sys.stdout)
 
-        # If we found no PersistenceItem date we go with plan B (but most probably this is corrupt and will fail later)
+        # If we found no AmCacheItem date we go with plan B and just hash the whole file
         if instanceID is None:
             file_object = loadFile(file_name_fullpath)
             content = file_object.read()
@@ -62,9 +63,8 @@ class Amcache_mirlua_v1(Ingest):
         # As long as we find one AmCacheItem PersistenceType we're declaring it good for us
         # Check magic
         magic_id = self.id_filename(file_name_fullpath)
-        print("magic_id:%s"%magic_id)
         if 'XML' in magic_id:
-            if 'Mir AmCache Lua_v2 file' in magic_id: return True
+            if 'Mir AmCache Lua_v1 file' in magic_id: return True
             else:
                 file_object = loadFile(file_name_fullpath)
                 try:
@@ -98,6 +98,62 @@ class Amcache_mirlua_v1(Ingest):
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
         maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
+        # alltags = set()
+        tag_mapping = [
+            ('AmCacheCompanyName', 'N/A'),
+            ('AmCacheCompileTime', 'N/A'),
+            ('AmCacheCreated', 'N/A'),
+            ('AmCacheFileDescription', 'N/A'),
+            ('AmCacheFilePath', 'N/A'),
+            ('AmCacheFileSize', 'N/A'),
+            ('AmCacheFileVersionNumber', 'N/A'),
+            ('AmCacheFileVersionString', 'N/A'),
+            ('AmCacheLanguageCode', 'N/A'),
+            ('AmCacheLastModified', 'N/A'),
+            ('AmCacheLastModified2', 'N/A'),
+            ('AmCachePEHeaderChecksum', 'N/A'),
+            ('AmCachePEHeaderHash', 'N/A'),
+            ('AmCachePEHeaderSize', 'N/A'),
+            ('AmCacheProductName', 'N/A'),
+            ('AmCacheProgramID', 'N/A'),
+            ('AmCacheSha1', 'SHA1'),
+            ('FileItem_Accessed', 'N/A'),
+            ('FileItem_Changed', 'N/A'),
+            ('FileItem_Created', 'N/A'),
+            ('FileItem_DevicePath', 'N/A'),
+            ('FileItem_Drive', 'N/A'),
+            ('FileItem_FileAttributes', 'N/A'),
+            ('FileItem_FileExtension', 'N/A'),
+            ('FileItem_FileName', 'N/A'),
+            ('FileItem_FilePath', 'N/A'),
+            ('FileItem_FullPath', 'N/A'),
+            ('FileItem_Md5sum', 'N/A'),
+            ('FileItem_Modified', 'N/A'),
+            ('FileItem_PEInfo_BaseAddress', 'N/A'),
+            ('FileItem_PEInfo_DigitalSignature_Description', 'N/A'),
+            ('FileItem_PEInfo_ExtraneousBytes', 'N/A'),
+            ('FileItem_PEInfo_PEChecksum_PEComputedAPI', 'N/A'),
+            ('FileItem_PEInfo_PEChecksum_PEFileAPI', 'N/A'),
+            ('FileItem_PEInfo_PEChecksum_PEFileRaw', 'N/A'),
+            ('FileItem_PEInfo_PETimeStamp', 'N/A'),
+            ('FileItem_PEInfo_Subsystem', 'N/A'),
+            ('FileItem_PEInfo_Type', 'N/A'),
+            ('FileItem_SecurityID', 'N/A'),
+            ('FileItem_SecurityType', 'N/A'),
+            ('FileItem_SizeInBytes', 'N/A'),
+            ('FileItem_Username', 'N/A'),
+            ('ProgramEntryPresent', 'N/A'),
+            ('ProgramInstallDate', 'N/A'),
+            ('ProgramInstallSource', 'N/A'),
+            ('ProgramLocaleID', 'N/A'),
+            ('ProgramName', 'N/A'),
+            ('ProgramPackageCode', 'N/A'),
+            ('ProgramPackageCode2', 'N/A'),
+            ('ProgramUninstallKey', 'N/A'),
+            ('ProgramUnknownTimestamp', 'N/A'),
+            ('ProgramVendorName', 'N/A'),
+            ('ProgramVersion', 'N/A')]
+
         rowNumber = 0
         check_tags = ['AmCacheLastModified2']
         try:
@@ -162,15 +218,29 @@ class Amcache_mirlua_v1(Ingest):
                                     tmp_LastUpdate = datetime.strptime(tmp_LastUpdate, "%Y-%m-%d %H:%M:%S")
                             else: tmp_LastUpdate = minSQLiteDTS
 
-                            namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
-                              RowNumber=rowNumber,
-                              InstanceID=instanceID,
-                              LastModified=tmp_LastModified,
-                              LastUpdate=tmp_LastUpdate,
-                              FileName=ntpath.basename(tag_dict['AmCacheFilePath']),
-                              FilePath=ntpath.dirname(tag_dict['AmCacheFilePath']),
-                              Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
-                              ExecFlag=tmpExecFlag)
+
+                            row_dict = {}
+                            row_dict['HostID'] = hostID
+                            row_dict['EntryType'] = settings.__APPCOMPAT__
+                            row_dict['RowNumber'] = rowNumber
+                            row_dict['InstanceID'] = instanceID
+                            row_dict['LastModified'] = tmp_LastModified
+                            row_dict['LastUpdate'] = tmp_LastUpdate
+                            row_dict['FileName'] = ntpath.basename(tag_dict['AmCacheFilePath'])
+                            row_dict['FilePath'] = ntpath.dirname(tag_dict['AmCacheFilePath'])
+                            row_dict['Size'] = (tag_dict['Size'] if 'Size' in tag_dict else 'N/A')
+                            row_dict['ExecFlag'] = tmpExecFlag
+
+                            # for tag in tag_dict.keys():
+                            #     alltags.add(tag)
+
+                            # Add all tags available with mappings to our database schema
+                            for src_tag, dest_tag in tag_mapping:
+                                if dest_tag <> 'N/A':
+                                    if src_tag in tag_dict:
+                                        row_dict[dest_tag] = tag_dict[src_tag]
+
+                            namedrow = settings.EntriesFields(**row_dict)
                             rowsData.append(namedrow)
                             rowNumber += 1
                         except Exception as e:
@@ -187,3 +257,5 @@ class Amcache_mirlua_v1(Ingest):
             print e.message
             print traceback.format_exc()
             pass
+
+        print alltags
