@@ -1152,7 +1152,7 @@ def rndsearch(DB, options):
                 matches = omnimatch(filename, [])
                 result = minimum_entropy_match_sequence(filename, matches)
                 if result['score'] == 4:
-                    print("%s, %s, %.0f" % (filename, filenameFull, result['score']))
+                    print("%s, %.0f" % (filenameFull, result['score']))
 
 
 
@@ -1166,7 +1166,7 @@ def rndsearch2(DB, options):
         print("Processing %d file names" % len(rows))
         for row in rows:
             filenameFull = row[0]
-            print filenameFull
+            # print filenameFull
             # filenameFull = "qYXyeDEH.exe"
             filename = os.path.splitext(filenameFull)[0]
             fileext = os.path.splitext(filenameFull)[1]
@@ -1181,7 +1181,7 @@ def rndsearch2(DB, options):
             matches = omnimatch(filename, [])
             result = minimum_entropy_match_sequence(filename, matches)
             if result['score'] == 4:
-                print("%f, %s, %s" % (result['crack_time'], filename, filenameFull))
+                print("%f, %s" % (result['crack_time'], filenameFull))
 
 
 
