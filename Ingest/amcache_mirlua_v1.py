@@ -62,14 +62,17 @@ class Amcache_mirlua_v1(Ingest):
         # As long as we find one AmCacheItem PersistenceType we're declaring it good for us
         # Check magic
         magic_id = self.id_filename(file_name_fullpath)
+        print("magic_id:%s"%magic_id)
         if 'XML' in magic_id:
-            file_object = loadFile(file_name_fullpath)
-            try:
-                root = etree.parse(file_object).getroot()
-                if root.find('AmCacheItem'):
-                    return True
-            except Exception:
-                logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
+            if 'Mir AmCache Lua_v2 file' in magic_id: return True
+            else:
+                file_object = loadFile(file_name_fullpath)
+                try:
+                    root = etree.parse(file_object).getroot()
+                    if root.find('AmCacheItem'):
+                        return True
+                except Exception:
+                    logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
 
         return False
 

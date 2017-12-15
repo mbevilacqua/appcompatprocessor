@@ -353,7 +353,7 @@ def GetIDForHosts(fileFullPathList, DB):
         hostName = None
         ingest_type = None
         loop_counter = 0
-        logger.info("Extracting hostname from: %s" % file_name_fullpath)
+        logger.info("Calculating ID for: %s" % file_name_fullpath)
         while True:
             if loop_counter > len(ingest_plugins_types_stack):
                 # We ignore empty file from hosts with no appcompat data

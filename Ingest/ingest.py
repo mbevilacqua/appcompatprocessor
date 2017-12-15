@@ -43,7 +43,7 @@ class Ingest(object):
         # 'MS Windows registry file, NT/2000 or above'
         # 'XML 1.0 document, ASCII text'
         magic_id = None
-        file_chunk = loadFile(file_name_fullpath, 200)
+        file_chunk = loadFile(file_name_fullpath, 1000)
         if 'regf' in file_chunk.getvalue(): magic_id = 'MS Windows registry file, NT/2000 or above'
         elif '?xml' in file_chunk.getvalue(): magic_id = 'XML 1.0 document, ASCII text'
         elif 'Last Modified,Last Update' in file_chunk.getvalue(): magic_id = 'ShimCacheParser CSV'
@@ -52,7 +52,9 @@ class Ingest(object):
         # Perform deeper check to distinguish subtype
         if 'IssueList' in file_chunk.getvalue(): magic_id += '+ Mir IssueList file'
         elif 'batchresult' in file_chunk.getvalue(): magic_id += '+ Mir batchresult file'
+        elif 'AmCacheItem' in file_chunk.getvalue(): magic_id += '+ Mir AmCache Lua_v2 file'
         elif 'itemList' in file_chunk.getvalue(): magic_id += '+ Mir itemList file'
+
 
         file_chunk.close()
         return magic_id
