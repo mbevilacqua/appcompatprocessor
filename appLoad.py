@@ -97,11 +97,11 @@ class appLoadProd(MPEngineWorker):
             self.check_killed()
             sanityCheckOK = True
             try:
+                # Sanity check dates:
+                # We need to exclude these entries as the SQLite driver would die later when queried
+                minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
+                maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
                 if x.EntryType == settings.__AMCACHE__:
-                    # Sanity check AMCache dates:
-                    # We need to exclude these entries as the SQLite driver would die later when queried
-                    minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
-                    maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
 
                     if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.FirstRun):
                         sanityCheckOK = False
@@ -124,15 +124,36 @@ class appLoadProd(MPEngineWorker):
                             "Weird LinkerTS date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
                             x.HostID, x.FilePath, x.LinkerTS))
 
+                if x.EntryType == settings.__APPCOMPAT__:
+                    if x.FirstRun is not None:
+                        if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.FirstRun):
+                            sanityCheckOK = False
+                            settings.logger.warning(
+                                "Weird FirstRun date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                                x.HostID, x.FilePath, x.FirstRun))
+
+                    if x.LastModified is not None:
+                        if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.LastModified):
+                            sanityCheckOK = False
+                            settings.logger.warning(
+                                "Weird LastModified date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                                x.HostID, x.FilePath, x.LastModified))
+
+                    if x.LastUpdate is not None:
+                        if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.LastUpdate):
+                            sanityCheckOK = False
+                            settings.logger.warning(
+                                "Weird LastUpdate date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                                x.HostID, x.FilePath, x.LastUpdate))
+
                 if sanityCheckOK:
                     # We use FirstRun as LastModified for AmCache entries
-                    if x.EntryType == settings.__AMCACHE__:
-                        x.LastModified = x.FirstRun
-
                     # We use Modified2 as LastUpdate for AmCache entries
                     if x.EntryType == settings.__AMCACHE__:
+                        x.LastModified = x.FirstRun
                         x.LastUpdate = x.Modified2
 
+                    # Should be able to remove this from here once all ingest plugins deliver datetimes consistently:
                     if type(x.LastModified) != datetime:
                         # todo: Maybe we don't need this after the ISO patch to ShimCacheParser?
                         if x.LastModified != "N/A" and x.LastModified != None:
