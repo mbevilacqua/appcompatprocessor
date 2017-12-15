@@ -62,12 +62,14 @@
 [PlugX]=\\OleView\.exe / (\\Program Files( \(x86\)){0,1}\\(Microsoft SDKs|Windows Kits|microsoft visual studio|Windows Resource Kits))
 [PlugX]=\\POETWLauncher\.exe
 [PlugX]=\\RasTls\.exe
-[PlugX]=\\rc\.exe / (\\Program Files( \(x86\)){0,1}\\(microsoft.net|Windows Kits|Microsoft SDKs|microsoft visual studio 8|microsoft visual studio|microsoft sdk))
+[PlugX]=\\rc\.exe / (\\Program Files( \(x86\)){0,1}\\(microsoft.net|Windows Kits|Microsoft SDKs|microsoft visual studio 8|microsoft visual studio|microsoft sdk|national instruments))
 [PlugX]=\\RunHelp\.exe
 [PlugX]=\\sep_NE\.exe
-[PlugX]=\\setup\.dll
+#[PlugX]=\\setup\.dll
 [PlugX]=\\tplcdclr\.exe
 [PlugX]=\\Ushata\.exe
+[PlugX distnoted.exe]=\\distnoted\.exe / (Common Files\\Apple\\Apple Application Support)
+[PLugX vmtoolsd.exe]=\\vmtoolsd.\exe / (\\VMware\\VMware Tools)
 
 # Metasploit-dropped files with random file names
 [Metasploit]=\\windows\\temp\\[a-zA-Z]{16}\.(exe|bat) / (VerifyAndInstall\.exe)
@@ -100,12 +102,12 @@
 [Known bad - dual use: procdump]=\\(procdump|pdump|pc)(64)+\\.exe / (\\SysInternals\\)
 
 ### Cred Dumping
-[Dumper - Common Names]=\\(q32|q64|wceaux|w86|q86|quarkpwd[^\\]*|m64|m32|hash32|hash64|64|32|w32|w64|wce32|wce64|w32|w64|wce|p32|p64|ps32|ps64|mimikatz|mimilove|mm32|mm64|pw32|pw64|g32|g64|gs32|gs64|hash|hashdump|dumpsvc)\.exe
-[Dumper - GsecDump]=(\\g64\-|\\g32\-|\\gsecdump\.exe|gcx64\.|\\gcx32\.|\\gec\.|\\gse\.exe)
+[Dumper - Common Names]=\\(q32|q64|wceaux|w86|q86|quarkpwd[^\\]*|m64|m32|hash32|hash64|64|32|w32|w64|wce32|wce64|w32|w64|wce|p32|p64|ps32|ps64|mimikatz|mimilove|mm32|mm64|pw32|pw64|g32|g64|gs32|gs64|hash|hashdump|dumpsvc)\.exe / (\\python|site-packages)
+[Dumper - GsecDump]=\\(g64\-|g32\-|gsecdump\.exe|gcx64\.|gcx32\.|gec\.|gse\.exe)
 [Dumper - Other]=\\(pwhash|pwdump|fgdump)[^\\]*
 
 # Generic methodology
-[One character + ext]=\\.\..{1,3}$ / (\\cygwin\\|\\GnuWin32\\|Opera\\k\.(exe|bat)|\\R\\r-|\\Git\\usr|\\adobe after effects|\\perl)
+[One character + ext]=\\.\..{1,3}$ / (\\cygwin\\|\\GnuWin32\\|Opera\\k\.(exe|bat)|\\R\\r-|\\Git\\usr|\\adobe after effects|\\perl|\\[\.exe)
 [Numeric vbs]=\\.(\d)*\.vbs
 [Char + Numeric vbs]=\\..(\d)*\.vbs
 [Short file one directory from root]=C\:\\(?!(Windows|Bin))[a-zA-Z]{1,10}\\(?!hh)[a-zA-Z0-9]{1,3}\.[a-zA-Z]{1,3}$
