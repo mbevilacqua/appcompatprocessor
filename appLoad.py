@@ -394,7 +394,7 @@ def GetIDForHosts(fileFullPathList, DB):
     with closing(conn.cursor()) as c:
         for hostName in hostsTest.keys():
             assert(hostName)
-            logger.debug("Processing host: %s" % hostName)
+            # logger.debug("Processing host: %s" % hostName)
             # Check if Host exists
             c.execute("SELECT count(*) FROM Hosts WHERE HostName = '%s'" % hostName)
             data = c.fetchone()[0]
@@ -405,8 +405,8 @@ def GetIDForHosts(fileFullPathList, DB):
                 tmpHostID = data[0]
                 tmpInstances = eval(data[1])
                 for (file_fullpath, ingest_plugin) in hostsTest[hostName]:
-                    logger.debug("Grabbing instanceID from file: %s" % file_fullpath)
                     try:
+                        logger.debug("[%s] Grabbing instanceID from file: %s" % (ingest_plugin, file_fullpath))
                         instance_ID = CalculateInstanceID(file_fullpath, ingest_plugin)
                     except Exception:
                         logger.error("Error parsing: %s (skipping)" % file_fullpath)
@@ -426,6 +426,7 @@ def GetIDForHosts(fileFullPathList, DB):
                 newInstances = []
                 for (file_fullpath, ingest_plugin) in hostsTest[hostName]:
                     try:
+                        logger.debug("[%s] Grabbing instanceID from file: %s" % (ingest_plugin, file_fullpath))
                         instance_ID = CalculateInstanceID(file_fullpath, ingest_plugin)
                     except Exception:
                         logger.error("Error parsing: %s (skipping)" % file_fullpath)
@@ -445,7 +446,6 @@ def GetIDForHosts(fileFullPathList, DB):
             if settings.logger_getDebugMode():
                 status_extra_data = " [RAM: %d%%]" % psutil_phymem_usage()
             else: status_extra_data = ""
-            # logger.debug("Pre-process new hosts/instances%s" % status_extra_data)
             logger.info(update_progress(min(1, float(progress_current) / float(progress_total)), "Calculate ID's for new hosts/instances%s" % status_extra_data, True))
         conn.commit()
 
