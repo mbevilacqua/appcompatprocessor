@@ -258,4 +258,3 @@ class Amcache_mirlua_v1(Ingest):
             print traceback.format_exc()
             pass
 
-        print alltags
