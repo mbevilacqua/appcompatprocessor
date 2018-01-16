@@ -134,7 +134,7 @@
 # Execution using a volume name in the ’dot’ namespace. Used by some malware with encrytped VFS's
 # Uroburos example shimcache entry: "01/01/10 xx:xx:xx N/A 900ff1\rexec.exe N/A False"
 # Signature is good but will unfortunately hit on everything ShimCache parses incorrectly.
-[Exec from VFS]=^(?!SYSVOL)(?!UNC)(?!\\\?\?\\)(?![A-Z]:)[^\\:]*\\ / (None\\None)
+[Exec from VFS]=^(?!SYSVOL)(?!UNC)(?!\\\?)(?![A-Z]:)[^\\:]*\\ / (None\\None)
 
 # Interesting entries pointing to USB drives (experimental)
 [USB]=^STORAGE#Volume#_.._USBSTOR#
