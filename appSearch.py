@@ -555,16 +555,17 @@ def appSearchMP(dbfilenameFullPath, searchType, search_space, options):
     # Start timer
     t0 = time.time()
 
+    DB = appDB.DBClass(dbfilenameFullPath, True, settings.__version__)
+    conn = DB.appConnectDB()
+
     # If possible use the available indexes
-    if searchType == 'LITERAL' and options.searchLiteral[0][0] not in ['=','>','<'] and (search_space.lower() == 'filename' or search_space.lower() == 'filepath'):
+    if searchType == 'LITERAL' and options.searchLiteral[0][0] not in ['=','>','<'] and DB.appIndexExistsDB(options.field_name):
         num_hits = namedtuple('hits', 'value')
         num_hits_suppressed = namedtuple('hits', 'value')
         (num_hits.value, num_hits_suppressed.value, results) = runIndexedSearch(dbfilenameFullPath, search_space, options)
 
     else:
         # Get total number of entries to search
-        DB = appDB.DBClass(dbfilenameFullPath, True, settings.__version__)
-        conn = DB.appConnectDB()
         entriesCount = DB.CountEntries()
         logger.debug("Total entries in search space: %d" % entriesCount)
 
