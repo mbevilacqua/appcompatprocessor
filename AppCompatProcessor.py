@@ -1323,8 +1323,9 @@ def main(args):
                         search_space = options.field_name
 
                     # Check if we have an index on it and create it if we don't
-                    index_name = 'index_Entries'+str.lower(options.field_name)
-                    DB.appRequireIndexesDB(index_name, "CREATE INDEX "+index_name+" on Entries("+options.field_name+")", quiet=False)
+                    # todo: Discriminate on what table we need to create the index (will fail for non-entries fields like FilePath)
+                    # index_name = 'index_Entries'+str.lower(options.field_name)
+                    # DB.appRequireIndexesDB(index_name, "CREATE INDEX "+index_name+" on Entries("+options.field_name+")", quiet=False)
 
                 if not syntaxError:
                     if(options.searchRegex is not None and options.searchLiteral is not None):
