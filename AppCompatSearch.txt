@@ -7,7 +7,7 @@
 [Missplaced svchost]=\\svchost\.exe / (\\(Windows|WINNT)\\(System32|SysWOW64)\\svchost\.exe)
 
 # Other missplaced stuff you probably want to be aware of
-[Missplaced System File]=\\(cmd|lsass|rundll|rundll32|net|net1|taskeng|conhost|powershell)\.exe / (\\(Windows|WINNT)\\(System32|SysWOW64|winsxs|Sysnative|anti-malware\\chameleon)\\)
+[Missplaced System File]=\\(cmd|lsass|rundll|rundll32|net|net1|taskeng|conhost|powershell|csvde|nltest)\.exe / (\\(Windows|WINNT)\\(System32|SysWOW64|winsxs|Sysnative|anti-malware\\chameleon)\\)
 
 # Bad extensions
 [Bad extensions]=\.(jpg|gif|bmp|png|txt|dat|sql|dmp|log)$
