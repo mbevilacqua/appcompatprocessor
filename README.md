@@ -61,6 +61,7 @@ The following ingestion formats are currently supported:
 * AppCompat in CSV format as produced by ShimCacheParser.py
 > Use flags -t -o and store as one file per host.
 > File naming convention that you'll need to follow: \<HOSTNAME\>.csv.
+> Note that BOM is not currently supported so avoid the '--bom' flag for the time being.
 * AppCompat in Redline format
 > Redline creates a folder named after the hostname in the AnalysisSession1/Audits folder.
 > Aggregate all those folders into a single folder that must be called 'RedlineAudits' and ingest that folder to load everything up.
