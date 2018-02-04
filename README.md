@@ -51,7 +51,7 @@ Note: There seems to be an issue with some libregf versions on some linux enviro
 Sift comes pre-packaged with libregf v20141030 so 'pip -r requirements.txt' will add the few missing pieces easily.
 
 **Windows**
-Note: ACP is currently broken on Windows due to differences in implementation of multiprocessing! Will bring support back shortly.
+Note: ACP is currently broken on Windows due to differences in implementation of multiprocessing!
 
 
 ### Ingestion Modules
