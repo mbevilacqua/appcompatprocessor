@@ -4,7 +4,6 @@
 
 
 
-
 # AppCompatProcessor (Beta)
 "_Evolving AppCompat/AmCache data analysis beyond grep_"
 
