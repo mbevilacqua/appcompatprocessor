@@ -41,13 +41,13 @@ You need Python 2.7+, libregf and pyregf (python bindings) from https://github.c
 The rest of the requirements you can handle with 'pip install -r requirements.txt'.
 
 **Linux**
-You need Python 2.7+ and 'pip -r requirements.txt' should take care of everything for you.
+You need Python 2.7+ and 'pip install -r requirements.txt' should take care of everything for you.
 If you have issues with libregf or pyregf (python bindings for libregf) you can find them here: https://github.com/libyal/libregf
 
 Note: There seems to be an issue with some libregf versions on some linux environments in which libregf apparently provides file paths encoded in UTF16 (breaking sql inserts for us) when it used to do UTF8. Still trying to pinpoint when and why that happens to handle it correctly.
 
 **SIFT v3 users**
-Sift comes pre-packaged with libregf v20141030 so 'pip -r requirements.txt' will add the few missing pieces easily.
+Sift comes pre-packaged with libregf v20141030 so 'pip install -r requirements.txt' will add the few missing pieces easily.
 
 **Windows**
 Note: ACP is currently broken on Windows due to differences in implementation of multiprocessing!
