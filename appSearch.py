@@ -559,7 +559,7 @@ def appSearchMP(dbfilenameFullPath, searchType, search_space, options):
     conn = DB.appConnectDB()
 
     # If possible use the available indexes
-    if searchType == 'LITERAL' and options.searchLiteral[0][0] not in ['=','>','<'] and DB.appIndexExistsDB(options.field_name):
+    if hasattr(options, 'field_name') and searchType == 'LITERAL' and options.searchLiteral[0][0] not in ['=','>','<'] and DB.appIndexExistsDB(options.field_name):
         num_hits = namedtuple('hits', 'value')
         num_hits_suppressed = namedtuple('hits', 'value')
         (num_hits.value, num_hits_suppressed.value, results) = runIndexedSearch(dbfilenameFullPath, search_space, options)
