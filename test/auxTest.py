@@ -8,6 +8,7 @@ import unicodedata
 import logging
 from collections import defaultdict
 from appAux import update_progress
+
 try:
     from faker import Factory
     from faker.providers import BaseProvider
@@ -212,6 +213,7 @@ def build_fake_DB(hosts = 10, seed = random.randint(0,10000), database_file = No
                 LastModified = str(fake.date_time_between('-1y')) + "." + str(random.randint(1,9999))
                 LastUpdate = str(fake.date_time_between('-4y')) + "." + str(random.randint(1,9999))
                 filePathID = 0
+                # todo: FilePath retains final backslash on root paths (c:\, d:\ ...) remove.
                 FilePath, FileName = ntpath.split(fake.path())
                 FilePath = FilePath.lower()
                 FileName = FileName.lower()
