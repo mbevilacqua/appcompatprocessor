@@ -381,12 +381,14 @@ def GetIDForHosts(fileFullPathList, DB):
             ingest_plugins_types_stack.remove(ingest_type)
             ingest_plugins_types_stack.insert(len(ingest_plugins_types_stack), ingest_type)
             loop_counter += 1
-        if hostName is not None:
+        if hostName is not None and len(hostName) != 0:
             if hostName in hostsTest:
                 hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
             else:
                 hostsTest[hostName] = []
                 hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
+        else:
+            logger.warning("Something went very wrong, can't extract a hostname from: %s (skipping file)" % ntpath.basename(file_name_fullpath))
 
     progress_total = len(hostsTest.keys())
     # Iterate over hosts. If host exists in DB grab rowID else create and grab rowID.
