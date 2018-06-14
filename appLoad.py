@@ -14,15 +14,17 @@ import struct
 from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size
 import appDB
 import settings
-from ShimCacheParser import read_mir, write_it
+from ShimCacheParser_ACP import read_mir, write_it
 from AmCacheParser import _processAmCacheFile_StringIO
 import zipfile
-import contextlib
+# import contextlib
 from datetime import timedelta, datetime
 import sys
 import traceback
 import gc
 import cProfile
+from Ingest import issues_document
+from Ingest import appcompat_hxregistryaudit
 from Ingest import appcompat_parsed
 from Ingest import appcompat_mirregistryaudit
 from Ingest import amcache_miracquisition
@@ -47,7 +49,8 @@ else: settings.__PYREGF__ = True
 
 logger = logging.getLogger(__name__)
 _tasksPerJob = 10
-supported_ingest_plugins = ['appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
+supported_ingest_plugins = ['issues_document.Issues_document', 'appcompat_hxregistryaudit.Appcompat_hxregistryaudit',
+                            'appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
                             'appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',
                             'appcompat_mirregistryaudit.Appcompat_mirregistryaudit', 'amcache_mirlua_v1.Amcache_mirlua_v1',
                             'appcompat_mirlua_v2.Appcompat_mirlua_v2', 'appcompat_csv.Appcompat_csv',
@@ -94,11 +97,11 @@ class appLoadProd(MPEngineWorker):
             self.check_killed()
             sanityCheckOK = True
             try:
+                # Sanity check dates:
+                # We need to exclude these entries as the SQLite driver would die later when queried
+                minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
+                maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
                 if x.EntryType == settings.__AMCACHE__:
-                    # Sanity check AMCache dates:
-                    # We need to exclude these entries as the SQLite driver would die later when queried
-                    minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
-                    maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
 
                     if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.FirstRun):
                         sanityCheckOK = False
@@ -121,15 +124,36 @@ class appLoadProd(MPEngineWorker):
                             "Weird LinkerTS date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
                             x.HostID, x.FilePath, x.LinkerTS))
 
+                if x.EntryType == settings.__APPCOMPAT__:
+                    if x.FirstRun is not None:
+                        if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.FirstRun):
+                            sanityCheckOK = False
+                            settings.logger.warning(
+                                "Weird FirstRun date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                                x.HostID, x.FilePath, x.FirstRun))
+
+                    if x.LastModified is not None:
+                        if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.LastModified):
+                            sanityCheckOK = False
+                            settings.logger.warning(
+                                "Weird LastModified date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                                x.HostID, x.FilePath, x.LastModified))
+
+                    if x.LastUpdate is not None:
+                        if self._notInRange(minSQLiteDTS, maxSQLiteDTS, x.LastUpdate):
+                            sanityCheckOK = False
+                            settings.logger.warning(
+                                "Weird LastUpdate date, ignoring as this will kill sqlite on query: %s - %s - %s" % (
+                                x.HostID, x.FilePath, x.LastUpdate))
+
                 if sanityCheckOK:
                     # We use FirstRun as LastModified for AmCache entries
-                    if x.EntryType == settings.__AMCACHE__:
-                        x.LastModified = x.FirstRun
-
                     # We use Modified2 as LastUpdate for AmCache entries
                     if x.EntryType == settings.__AMCACHE__:
+                        x.LastModified = x.FirstRun
                         x.LastUpdate = x.Modified2
 
+                    # Should be able to remove this from here once all ingest plugins deliver datetimes consistently:
                     if type(x.LastModified) != datetime:
                         # todo: Maybe we don't need this after the ISO patch to ShimCacheParser?
                         if x.LastModified != "N/A" and x.LastModified != None:
@@ -141,7 +165,7 @@ class appLoadProd(MPEngineWorker):
                         else:
                             x.LastModified = datetime.min
 
-                    if type(x.LastModified) != datetime:
+                    if type(x.LastUpdate) != datetime:
                         if x.LastUpdate != "N/A" and x.LastUpdate != None:
                             if x.LastUpdate == '0000-00-00 00:00:00':
                                 settings.logger.warning("LastUpdate TS set to 0000-00-00 00:00:00 (%s)" % x)
@@ -171,6 +195,9 @@ class appLoadProd(MPEngineWorker):
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 self.logger.warning("Exception processing row (%s): %s [%s / %s / %s]" % (e.message, x, exc_type, fname, exc_tb.tb_lineno))
+
+                # Skip row:
+                rowsData.remove(x)
                 pass
         return rowsData
 
@@ -313,6 +340,8 @@ def CalculateInstanceID(file_fullpath, ingest_plugin):
 
 
 def GetIDForHosts(fileFullPathList, DB):
+    # todo: With the improved magic_checks this now takes quite a while
+    # todo: multiprocess, merge into host ID generation or at least add some GUI feedback.
     # Returns: (filePath, instanceID, hostname, hostID, ingest_type)
     hostsTest = {}
     hostsProcess = []
@@ -324,6 +353,7 @@ def GetIDForHosts(fileFullPathList, DB):
         hostName = None
         ingest_type = None
         loop_counter = 0
+        logger.info("Calculating ID for: %s" % file_name_fullpath)
         while True:
             if loop_counter > len(ingest_plugins_types_stack):
                 # We ignore empty file from hosts with no appcompat data
@@ -339,15 +369,11 @@ def GetIDForHosts(fileFullPathList, DB):
                 try:
                     magic_check = ingest_plugins[ingest_type].checkMagic(file_name_fullpath)
                     if isinstance(magic_check, tuple):
-                        magic_check_res = magic_check[0]
-                        magic_check_err = magic_check[1]
+                        logger.error("Report bug")
                     else: magic_check_res = magic_check
                     if magic_check_res:
                         # Magic OK, go with this plugin
                         hostName = ingest_plugins[ingest_type].getHostName(file_name_fullpath)
-                        break
-                    if not magic_check_err:
-                        # If it doesn't pass the plugin magic test but the plugin reports it's ok to ignore
                         break
                 except Exception as e:
                     logger.exception("Error processing: %s (%s)" % (file_name_fullpath, str(e)))
@@ -355,12 +381,14 @@ def GetIDForHosts(fileFullPathList, DB):
             ingest_plugins_types_stack.remove(ingest_type)
             ingest_plugins_types_stack.insert(len(ingest_plugins_types_stack), ingest_type)
             loop_counter += 1
-        if hostName is not None:
+        if hostName is not None and len(hostName) != 0:
             if hostName in hostsTest:
                 hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
             else:
                 hostsTest[hostName] = []
                 hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
+        else:
+            logger.warning("Something went very wrong, can't extract a hostname from: %s (skipping file)" % ntpath.basename(file_name_fullpath))
 
     progress_total = len(hostsTest.keys())
     # Iterate over hosts. If host exists in DB grab rowID else create and grab rowID.
@@ -368,7 +396,7 @@ def GetIDForHosts(fileFullPathList, DB):
     with closing(conn.cursor()) as c:
         for hostName in hostsTest.keys():
             assert(hostName)
-            logger.debug("Processing host: %s" % hostName)
+            # logger.debug("Processing host: %s" % hostName)
             # Check if Host exists
             c.execute("SELECT count(*) FROM Hosts WHERE HostName = '%s'" % hostName)
             data = c.fetchone()[0]
@@ -379,8 +407,8 @@ def GetIDForHosts(fileFullPathList, DB):
                 tmpHostID = data[0]
                 tmpInstances = eval(data[1])
                 for (file_fullpath, ingest_plugin) in hostsTest[hostName]:
-                    logger.debug("Grabbing instanceID from file: %s" % file_fullpath)
                     try:
+                        logger.debug("[%s] Grabbing instanceID from file: %s" % (ingest_plugin, file_fullpath))
                         instance_ID = CalculateInstanceID(file_fullpath, ingest_plugin)
                     except Exception:
                         logger.error("Error parsing: %s (skipping)" % file_fullpath)
@@ -400,6 +428,7 @@ def GetIDForHosts(fileFullPathList, DB):
                 newInstances = []
                 for (file_fullpath, ingest_plugin) in hostsTest[hostName]:
                     try:
+                        logger.debug("[%s] Grabbing instanceID from file: %s" % (ingest_plugin, file_fullpath))
                         instance_ID = CalculateInstanceID(file_fullpath, ingest_plugin)
                     except Exception:
                         logger.error("Error parsing: %s (skipping)" % file_fullpath)
@@ -419,7 +448,6 @@ def GetIDForHosts(fileFullPathList, DB):
             if settings.logger_getDebugMode():
                 status_extra_data = " [RAM: %d%%]" % psutil_phymem_usage()
             else: status_extra_data = ""
-            # logger.debug("Pre-process new hosts/instances%s" % status_extra_data)
             logger.info(update_progress(min(1, float(progress_current) / float(progress_total)), "Calculate ID's for new hosts/instances%s" % status_extra_data, True))
         conn.commit()
 
@@ -444,7 +472,9 @@ def processArchives(filename, file_filter):
 
             for zipped_filename in zipFileList:
                 if re.match(file_filter, zipped_filename):
+                    logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
                     files_to_process.append(os.path.join(zip_archive_filename, zipped_filename))
+                else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
             if len(files_to_process) == 0:
                 logger.error("No valid files found!")
         except (IOError, zipfile.BadZipfile, struct.error), err:
@@ -464,9 +494,9 @@ def searchFolders(pathToLoad, file_filter):
             files_to_process.extend(searchFolders(os.path.join(pathToLoad, dir), file_filter))
         for filename in filenames:
             if re.match(file_filter, os.path.join(pathToLoad, filename)):
+                logger.debug("Adding file to process: %s" % os.path.join(pathToLoad, filename))
                 files_to_process.extend(processArchives(os.path.join(pathToLoad, filename), file_filter))
-            else:
-                logger.warning("Skiping file, no ingest plugin found to process: %s" % filename)
+            else: logger.warning("Skipping file, no ingest plugin found to process: %s" % filename)
         break
     return files_to_process
 

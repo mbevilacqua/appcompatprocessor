@@ -1,12 +1,12 @@
 import settings
 import logging
 from ingest import Ingest
-import xml.etree.ElementTree as ET
 from appAux import loadFile
 import hashlib
 import ntpath
 from datetime import datetime
 import sys, traceback
+import os
 
 try:
     import xml.etree.cElementTree as etree
@@ -31,25 +31,18 @@ class Appcompat_mirShimShady_v1(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         # As long as we find one ShimCacheItem entry we're declaring it good for us
-        file_object = loadFile(file_name_fullpath)
-        # In HX due to the fila naming conventions we can't distinguish Issues docs based on file name. We need to perform a pre-check to silently discard them.
-
-        # Detect Issues documents from HX:
-        # ...
-
-        try:
-            root = etree.parse(file_object).getroot()
-            if root.find('ShimCacheItem') is not None:
-                return True
-            else:
-                # Add second check to silence error reporting if we're looking at a Mir/HX issues document
-                if root.find('Issue') is not None:
-                    # Adding 2nd return value to report the file can be safely ignored (no error reporting required)
-                    return (False, False)
-        except Exception as e:
-            logger.exception("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
-        finally:
-            file_object.close()
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'XML' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            try:
+                root = etree.parse(file_object).getroot()
+                if root.find('ShimCacheItem') is not None:
+                    return True
+            except Exception as e:
+                logger.exception("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
+            finally:
+                file_object.close()
 
         return False
 
@@ -88,7 +81,10 @@ class Appcompat_mirShimShady_v1(Ingest):
                         tag_dict[tag_prefix + e.tag] = tag_dict[tag_prefix + e.tag] + ", " + e.text
 
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
+        minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
+        maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
         rowNumber = 0
+
         check_tags = ['LastModified', 'AppCompatPath']
         try:
             xml_data = loadFile(file_fullpath)
@@ -116,17 +112,39 @@ class Appcompat_mirShimShady_v1(Ingest):
                         else:
                             # Note that Shim Shady does not extract ExecFlag on some platforms (at least Windows 10).
                             tmpExexFlag = 'unk'
-                        namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
-                              RowNumber=rowNumber,
-                              InstanceID=instanceID,
-                              LastModified=(tag_dict['LastModified'].replace("T"," ").replace("Z","") if 'LastModified' in tag_dict else '0001-01-01 00:00:00'),
-                              LastUpdate=(tag_dict['LastUpdate'].replace("T"," ").replace("Z","") if 'LastUpdate' in tag_dict else '0001-01-01 00:00:00'),
-                              FileName=ntpath.basename(tag_dict['AppCompatPath']),
-                              FilePath=ntpath.dirname(tag_dict['AppCompatPath']),
-                              Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
-                              ExecFlag=tmpExexFlag)
-                        rowsData.append(namedrow)
-                        rowNumber += 1
+
+                        try:
+                            # Convert TS to datetime format
+                            if 'LastModified' in tag_dict:
+                                tmp_LastModified = tag_dict['LastModified'].replace("T", " ").replace("Z", "")
+                                if type(tmp_LastModified) is not datetime:
+                                    tmp_LastModified = datetime.strptime(tmp_LastModified, "%Y-%m-%d %H:%M:%S")
+                            else: tmp_LastModified = minSQLiteDTS
+
+                            if 'LastUpdate' in tag_dict:
+                                tmp_LastUpdate = tag_dict['LastUpdate'].replace("T", " ").replace("Z", "")
+                                if type(tmp_LastUpdate) is not datetime:
+                                    tmp_LastUpdate = datetime.strptime(tmp_LastUpdate, "%Y-%m-%d %H:%M:%S")
+                            else: tmp_LastUpdate = minSQLiteDTS
+
+
+                            namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
+                                  RowNumber=rowNumber,
+                                  InstanceID=instanceID,
+                                  LastModified=tmp_LastModified,
+                                  LastUpdate=tmp_LastUpdate,
+                                  FileName=ntpath.basename(tag_dict['AppCompatPath']),
+                                  FilePath=ntpath.dirname(tag_dict['AppCompatPath']),
+                                  Size=(tag_dict['Size'] if 'Size' in tag_dict else 'N/A'),
+                                  ExecFlag=tmpExexFlag)
+                            rowsData.append(namedrow)
+                            rowNumber += 1
+                        except Exception as e:
+                            print("crap")
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                            logger.info("Exception processing row (%s): %s [%s / %s / %s]" % (
+                            e.message, element, exc_type, fname, exc_tb.tb_lineno))
             else:
                 pass
                 element.clear()

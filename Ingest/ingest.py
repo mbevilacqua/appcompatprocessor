@@ -1,7 +1,7 @@
 import logging
 import re
 import hashlib
-from appAux import loadFile
+from appAux import loadFile, toHex
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,28 @@ class Ingest(object):
         # Validate the file is actually a file the ingect pulgin can work with
         # Ingest plugins _must_ override this
         return True
+
+    def id_filename(self, file_name_fullpath):
+        # Emulate file magic functionality without external deps
+        # Limited to:
+        # 'MS Windows registry file, NT/2000 or above'
+        # 'XML 1.0 document, ASCII text'
+        magic_id = None
+        file_chunk = loadFile(file_name_fullpath, 1000)
+        if 'regf' in file_chunk.getvalue(): magic_id = 'MS Windows registry file, NT/2000 or above'
+        elif '?xml' in file_chunk.getvalue(): magic_id = 'XML 1.0 document, ASCII text'
+        elif 'Last Modified,Last Update' in file_chunk.getvalue(): magic_id = 'ShimCacheParser CSV'
+        else: logger.warning("Unknown magic in file: %s [%s]" % (file_name_fullpath, toHex(file_chunk.getvalue())))
+
+        # Perform deeper check to distinguish subtype
+        if 'IssueList' in file_chunk.getvalue(): magic_id += '+ Mir IssueList file'
+        elif 'batchresult' in file_chunk.getvalue(): magic_id += '+ Mir batchresult file'
+        elif 'AmCacheItem' in file_chunk.getvalue(): magic_id += '+ Mir AmCache Lua_v1 file'
+        elif 'itemList' in file_chunk.getvalue(): magic_id += '+ Mir itemList file'
+
+
+        file_chunk.close()
+        return magic_id
 
     def calculateID(self, file_name_fullpath):
         # Lazy instanceID calculation, overwrite to make it faster if possible for the ingest format

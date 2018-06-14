@@ -10,12 +10,12 @@ import ntpath
 
 logger = logging.getLogger(__name__)
 # Module to ingest AmCache data
-# File name and format is what you get from a Mir FileAcquisition audit
+# File name and format is what you get from a Mir or HX FileAcquisition audit
 # Note: Exactly the same as amcache_raw_hive with a different file_name_filter
 
 class Amcache_miracquisition(Ingest):
     ingest_type = "amcache_miracquisition"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_octet-stream.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_octet-stream\.xml|_[a-zA-Z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Amcache_miracquisition, self).__init__()
@@ -27,11 +27,11 @@ class Amcache_miracquisition(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         magic_ok = False
-        # Quick and dirty check
-        file_object = loadFile(file_name_fullpath)
-        tmp = struct.unpack( '4s' , file_object.read(4) )
-        if tmp[0] == "regf":
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'registry file' in magic_id:
             # Perform a deeper check using pyregf
+            file_object = loadFile(file_name_fullpath)
             regf_file = pyregf.file()
             regf_file.open_file_object(file_object, "r")
             magic_key = regf_file.get_key_by_path(r'Root\File')
@@ -40,9 +40,9 @@ class Amcache_miracquisition(Ingest):
             if magic_key is not None:
                 magic_ok = True
 
-        # Need to close these or the memory will never get freed:
-        file_object.close()
-        del file_object
+            # Need to close these or the memory will never get freed:
+            file_object.close()
+            del file_object
 
         return magic_ok
 
@@ -71,13 +71,28 @@ class Amcache_miracquisition(Ingest):
         file_object.close()
 
         for r in rows:
-            namedrow = settings.EntriesFields(HostID = hostID, EntryType = settings.__AMCACHE__, RowNumber = rowNumber,
-                FilePath = (None if r.path == None else ntpath.dirname(r.path)), FileName = (None if r.path == None else ntpath.basename(r.path)),
-                Size = r.size, ExecFlag = 'True', SHA1 = (None if r.sha1 == None else r.sha1[4:]),
-                FileDescription = r.file_description, FirstRun = r.first_run, Created = r.created_timestamp, Modified1 = r.modified_timestamp,
-                Modified2 = r.modified_timestamp2, LinkerTS = r.linker_timestamp, Product = r.product, Company = r.company,
-                PE_sizeofimage = r.pe_sizeofimage, Version_number = r.version_number, Version = r.version, Language = r.language,
-                Header_hash = r.header_hash, PE_checksum = r.pe_checksum, SwitchBackContext = r.switchbackcontext, InstanceID = instanceID)
+            namedrow = settings.EntriesFields(HostID = hostID, EntryType = settings.__AMCACHE__,
+            RowNumber = rowNumber,
+            FilePath = (None if r.path == None else ntpath.dirname(r.path)),
+            FileName = (None if r.path == None else ntpath.basename(r.path)),
+            Size = r.size, ExecFlag = 'True',
+            SHA1 = (None if r.sha1 == None else r.sha1[4:]),
+            FileDescription = r.file_description,
+            FirstRun = r.first_run,
+            Created = r.created_timestamp,
+            Modified1 = r.modified_timestamp,
+            Modified2 = r.modified_timestamp2,
+            LinkerTS = r.linker_timestamp,
+            Product = r.product,
+            Company = r.company,
+            PE_sizeofimage = r.pe_sizeofimage,
+            Version_number = r.version_number,
+            Version = r.version,
+            Language = r.language,
+            Header_hash = r.header_hash,
+            PE_checksum = r.pe_checksum,
+            SwitchBackContext = r.switchbackcontext,
+            InstanceID = instanceID)
             rowsData.append(namedrow)
             rowNumber += 1
 

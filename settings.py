@@ -94,6 +94,7 @@ class QueueHandler(logging.Handler):
         """
         try:
             self.queue.put_nowait(record)
+        # todo: Fix 'queue is not defined' error!
         except queue.Full:
             print("=>Logging queue full, dropping log entries!")
 

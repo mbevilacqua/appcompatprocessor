@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from appAux import loadFile
 import hashlib
 import re
-from ShimCacheParser import read_mir, write_it
+from ShimCacheParser_ACP import read_mir, write_it
 
 logger = logging.getLogger(__name__)
 # Module to ingest AppCompat data in XML format
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_mirregistryaudit(Ingest):
     ingest_type = "appcompat_mirregistryaudit"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32registry.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_w32registry.xml|_[A-Za-z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Appcompat_mirregistryaudit, self).__init__()
@@ -56,17 +56,20 @@ class Appcompat_mirregistryaudit(Ingest):
 
     def checkMagic(self, file_name_fullpath):
         # As long as we find one AppcompatCache key we're declaring it good for us
-        file_object = loadFile(file_name_fullpath)
-        try:
-            root = ET.parse(file_object).getroot()
-            for reg_key in root.findall('RegistryItem'):
-                if reg_key.find('ValueName').text == "AppCompatCache":
-                    return True
-        except Exception:
-            logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
-            #traceback.print_exc(file=sys.stdout)
-        finally:
-            file_object.close()
+        # Check magic
+        magic_id = self.id_filename(file_name_fullpath)
+        if 'XML' in magic_id:
+            file_object = loadFile(file_name_fullpath)
+            try:
+                root = ET.parse(file_object).getroot()
+                # todo: relpace findall with find:
+                for reg_key in root.findall('RegistryItem'):
+                    if reg_key.find('ValueName').text == "AppCompatCache":
+                        return True
+            except Exception:
+                logger.warning("[%s] Failed to parse XML for: %s" % (self.ingest_type, file_name_fullpath))
+            finally:
+                file_object.close()
 
         return False
 

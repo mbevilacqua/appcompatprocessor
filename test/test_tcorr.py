@@ -8,7 +8,7 @@ sys.setdefaultencoding("utf-8")
 import os
 from AppCompatProcessor import main
 from shutil import copyfile
-from ShimCacheParser import read_mir, write_it
+from ShimCacheParser_ACP import read_mir, write_it
 import tempfile
 import appDB
 import re, codecs
