@@ -23,13 +23,13 @@ class Ingest(object):
 
     def matchFileNameFilter(self, file_name_fullpath):
         # Check if our file_name_filter would match on the file we're looking at
-        m = re.match(self.file_name_filter, file_name_fullpath)
+        m = re.match(self.file_name_filter, file_name_fullpath, re.IGNORECASE)
         if m: return True
         else: return False
 
     def getHostName(self, file_name_fullpath):
         # We assume the hostname is the first capture group from the file_name_filter, override if not the case
-        m = re.match(self.file_name_filter, file_name_fullpath)
+        m = re.match(self.file_name_filter, file_name_fullpath, re.IGNORECASE)
         if m: return m.group(1)
 
     def checkMagic(self, file_name_fullpath):

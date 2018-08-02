@@ -493,7 +493,7 @@ def searchFolders(pathToLoad, file_filter):
         for dir in directories:
             files_to_process.extend(searchFolders(os.path.join(pathToLoad, dir), file_filter))
         for filename in filenames:
-            if re.match(file_filter, os.path.join(pathToLoad, filename)):
+            if re.match(file_filter, os.path.join(pathToLoad, filename), re.IGNORECASE):
                 logger.debug("Adding file to process: %s" % os.path.join(pathToLoad, filename))
                 files_to_process.extend(processArchives(os.path.join(pathToLoad, filename), file_filter))
             else: logger.warning("Skipping file, no ingest plugin found to process: %s" % filename)
