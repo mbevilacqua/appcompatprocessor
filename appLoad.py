@@ -11,7 +11,7 @@ import ntpath
 from contextlib import closing
 import time
 import struct
-from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size
+from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size, file_len
 import appDB
 import settings
 from ShimCacheParser_ACP import read_mir, write_it
@@ -388,7 +388,7 @@ def GetIDForHosts(fileFullPathList, DB):
                 hostsTest[hostName] = []
                 hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
         else:
-            logger.warning("Something went very wrong, can't extract a hostname from: %s (skipping file)" % ntpath.basename(file_name_fullpath))
+            logger.warning("Something went very wrong, can't extract a hostname from: %s [%d bytes] (skipping file)" % (ntpath.basename(file_name_fullpath), file_size(file_name_fullpath)))
 
     progress_total = len(hostsTest.keys())
     # Iterate over hosts. If host exists in DB grab rowID else create and grab rowID.
