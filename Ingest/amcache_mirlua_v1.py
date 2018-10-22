@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class Amcache_mirlua_v1(Ingest):
     ingest_type = "amcache_mirlua_v1"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}(?:_w32scripting-persistence.xml)$"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)(?:-[A-Za-z0-9]{64}-\d{1,10}-\d{1,10}_w32scripting-persistence.xml|_[A-Za-z0-9]{22}\.xml)$"
 
     def __init__(self):
         super(Amcache_mirlua_v1, self).__init__()
@@ -95,67 +95,68 @@ class Amcache_mirlua_v1(Ingest):
                         # Aggregate some tags when required
                         tag_dict[tag_prefix + e.tag] = tag_dict[tag_prefix + e.tag] + ", " + e.text
 
+
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
         maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
         # alltags = set()
         tag_mapping = [
-            ('AmCacheCompanyName', 'N/A'),
-            ('AmCacheCompileTime', 'N/A'),
-            ('AmCacheCreated', 'N/A'),
-            ('AmCacheFileDescription', 'N/A'),
-            ('AmCacheFilePath', 'N/A'),
-            ('AmCacheFileSize', 'N/A'),
-            ('AmCacheFileVersionNumber', 'N/A'),
-            ('AmCacheFileVersionString', 'N/A'),
-            ('AmCacheLanguageCode', 'N/A'),
-            ('AmCacheLastModified', 'N/A'),
-            ('AmCacheLastModified2', 'N/A'),
-            ('AmCachePEHeaderChecksum', 'N/A'),
-            ('AmCachePEHeaderHash', 'N/A'),
-            ('AmCachePEHeaderSize', 'N/A'),
-            ('AmCacheProductName', 'N/A'),
-            ('AmCacheProgramID', 'N/A'),
-            ('AmCacheSha1', 'SHA1'),
-            ('FileItem_Accessed', 'N/A'),
-            ('FileItem_Changed', 'N/A'),
-            ('FileItem_Created', 'N/A'),
-            ('FileItem_DevicePath', 'N/A'),
-            ('FileItem_Drive', 'N/A'),
-            ('FileItem_FileAttributes', 'N/A'),
-            ('FileItem_FileExtension', 'N/A'),
-            ('FileItem_FileName', 'N/A'),
-            ('FileItem_FilePath', 'N/A'),
-            ('FileItem_FullPath', 'N/A'),
-            ('FileItem_Md5sum', 'N/A'),
-            ('FileItem_Modified', 'N/A'),
-            ('FileItem_PEInfo_BaseAddress', 'N/A'),
-            ('FileItem_PEInfo_DigitalSignature_Description', 'N/A'),
-            ('FileItem_PEInfo_ExtraneousBytes', 'N/A'),
-            ('FileItem_PEInfo_PEChecksum_PEComputedAPI', 'N/A'),
-            ('FileItem_PEInfo_PEChecksum_PEFileAPI', 'N/A'),
-            ('FileItem_PEInfo_PEChecksum_PEFileRaw', 'N/A'),
-            ('FileItem_PEInfo_PETimeStamp', 'N/A'),
-            ('FileItem_PEInfo_Subsystem', 'N/A'),
-            ('FileItem_PEInfo_Type', 'N/A'),
-            ('FileItem_SecurityID', 'N/A'),
-            ('FileItem_SecurityType', 'N/A'),
-            ('FileItem_SizeInBytes', 'N/A'),
-            ('FileItem_Username', 'N/A'),
-            ('ProgramEntryPresent', 'N/A'),
-            ('ProgramInstallDate', 'N/A'),
-            ('ProgramInstallSource', 'N/A'),
-            ('ProgramLocaleID', 'N/A'),
-            ('ProgramName', 'N/A'),
-            ('ProgramPackageCode', 'N/A'),
-            ('ProgramPackageCode2', 'N/A'),
-            ('ProgramUninstallKey', 'N/A'),
-            ('ProgramUnknownTimestamp', 'N/A'),
-            ('ProgramVendorName', 'N/A'),
-            ('ProgramVersion', 'N/A')]
+            ('AmCacheCompanyName', 'N/A', 'string'),
+            ('AmCacheCompileTime', 'N/A', 'datetime'),
+            ('AmCacheCreated', 'N/A', 'datetime'),
+            ('AmCacheFileDescription', 'N/A', 'string'),
+            ('AmCacheFilePath', 'N/A', 'string'),
+            ('AmCacheFileSize', 'N/A', 'string'),
+            ('AmCacheFileVersionNumber', 'N/A', 'string'),
+            ('AmCacheFileVersionString', 'N/A', 'string'),
+            ('AmCacheLanguageCode', 'N/A', 'string'),
+            ('AmCacheLastModified', 'N/A', 'datetime'),
+            ('AmCacheRegLastModified', 'LastModified', 'datetime'),
+            ('AmCachePEHeaderChecksum', 'N/A', 'string'),
+            ('AmCachePEHeaderHash', 'N/A', 'string'),
+            ('AmCachePEHeaderSize', 'N/A', 'string'),
+            ('AmCacheProductName', 'N/A', 'string'),
+            ('AmCacheProgramID', 'N/A', 'string'),
+            ('AmCacheSha1', 'SHA1', 'string'),
+            ('FileItem_Accessed', 'N/A', 'datetime'),
+            ('FileItem_Changed', 'N/A', 'datetime'),
+            ('FileItem_Created', 'N/A', 'datetime'),
+            ('FileItem_DevicePath', 'N/A', 'string'),
+            ('FileItem_Drive', 'N/A', 'string'),
+            ('FileItem_FileAttributes', 'N/A', 'string'),
+            ('FileItem_FileExtension', 'N/A', 'string'),
+            ('FileItem_FileName', 'N/A', 'string'),
+            ('FileItem_FilePath', 'N/A', 'string'),
+            ('FileItem_FullPath', 'N/A', 'string'),
+            ('FileItem_Md5sum', 'N/A', 'string'),
+            ('FileItem_Modified', 'N/A', 'datetime'),
+            ('FileItem_PEInfo_BaseAddress', 'N/A', 'string'),
+            ('FileItem_PEInfo_DigitalSignature_Description', 'N/A', 'string'),
+            ('FileItem_PEInfo_ExtraneousBytes', 'N/A', 'string'),
+            ('FileItem_PEInfo_PEChecksum_PEComputedAPI', 'N/A', 'string'),
+            ('FileItem_PEInfo_PEChecksum_PEFileAPI', 'N/A', 'string'),
+            ('FileItem_PEInfo_PEChecksum_PEFileRaw', 'N/A', 'string'),
+            ('FileItem_PEInfo_PETimeStamp', 'N/A', 'datetime'),
+            ('FileItem_PEInfo_Subsystem', 'N/A', 'string'),
+            ('FileItem_PEInfo_Type', 'N/A', 'string'),
+            ('FileItem_SecurityID', 'N/A', 'string'),
+            ('FileItem_SecurityType', 'N/A', 'string'),
+            ('FileItem_SizeInBytes', 'N/A', 'string'),
+            ('FileItem_Username', 'N/A', 'string'),
+            ('ProgramEntryPresent', 'N/A', 'string'),
+            ('ProgramInstallDate', 'N/A', 'datetime'),
+            ('ProgramInstallSource', 'N/A', 'string'),
+            ('ProgramLocaleID', 'N/A', 'string'),
+            ('ProgramName', 'N/A', 'string'),
+            ('ProgramPackageCode', 'N/A', 'string'),
+            ('ProgramPackageCode2', 'N/A', 'string'),
+            ('ProgramUninstallKey', 'N/A', 'string'),
+            ('ProgramUnknownTimestamp', 'N/A', 'datetime'),
+            ('ProgramVendorName', 'N/A', 'string'),
+            ('ProgramVersion', 'N/A', 'string')]
 
         rowNumber = 0
-        check_tags = ['AmCacheLastModified2']
+        check_tags = ['AmCacheRegLastModified']
         try:
             xml_data = loadFile(file_fullpath)
             for event, element in etree.iterparse(xml_data, events=("end",)):
@@ -205,18 +206,18 @@ class Amcache_mirlua_v1(Ingest):
                             tmpExecFlag = False
 
                         try:
-                            # Convert TS to datetime format
-                            if 'LastModified' in tag_dict:
-                                tmp_LastModified = tag_dict['LastModified'].replace("T", " ").replace("Z", "")
-                                if type(tmp_LastModified) is not datetime:
-                                    tmp_LastModified = datetime.strptime(tmp_LastModified, "%Y-%m-%d %H:%M:%S")
-                            else: tmp_LastModified = minSQLiteDTS
-
-                            if 'LastUpdate' in tag_dict:
-                                tmp_LastUpdate = tag_dict['LastUpdate'].replace("T", " ").replace("Z", "")
-                                if type(tmp_LastUpdate) is not datetime:
-                                    tmp_LastUpdate = datetime.strptime(tmp_LastUpdate, "%Y-%m-%d %H:%M:%S")
-                            else: tmp_LastUpdate = minSQLiteDTS
+                            # # Convert TS to datetime format
+                            # if 'LastModified' in tag_dict:
+                            #     tmp_LastModified = tag_dict['LastModified'].replace("T", " ").replace("Z", "")
+                            #     if type(tmp_LastModified) is not datetime:
+                            #         tmp_LastModified = datetime.strptime(tmp_LastModified, "%Y-%m-%d %H:%M:%S")
+                            # else: tmp_LastModified = minSQLiteDTS
+                            #
+                            # if 'LastUpdate' in tag_dict:
+                            #     tmp_LastUpdate = tag_dict['LastUpdate'].replace("T", " ").replace("Z", "")
+                            #     if type(tmp_LastUpdate) is not datetime:
+                            #         tmp_LastUpdate = datetime.strptime(tmp_LastUpdate, "%Y-%m-%d %H:%M:%S")
+                            # else: tmp_LastUpdate = minSQLiteDTS
 
 
                             row_dict = {}
@@ -224,8 +225,8 @@ class Amcache_mirlua_v1(Ingest):
                             row_dict['EntryType'] = settings.__APPCOMPAT__
                             row_dict['RowNumber'] = rowNumber
                             row_dict['InstanceID'] = instanceID
-                            row_dict['LastModified'] = tmp_LastModified
-                            row_dict['LastUpdate'] = tmp_LastUpdate
+                            # row_dict['LastModified'] = tmp_LastModified
+                            # row_dict['LastUpdate'] = tmp_LastUpdate
                             row_dict['FileName'] = ntpath.basename(tag_dict['AmCacheFilePath'])
                             row_dict['FilePath'] = ntpath.dirname(tag_dict['AmCacheFilePath'])
                             row_dict['Size'] = (tag_dict['Size'] if 'Size' in tag_dict else 'N/A')
@@ -235,10 +236,16 @@ class Amcache_mirlua_v1(Ingest):
                             #     alltags.add(tag)
 
                             # Add all tags available with mappings to our database schema
-                            for src_tag, dest_tag in tag_mapping:
+                            for src_tag, dest_tag, dest_type in tag_mapping:
                                 if dest_tag <> 'N/A':
                                     if src_tag in tag_dict:
-                                        row_dict[dest_tag] = tag_dict[src_tag]
+                                        if dest_type == 'datetime':
+                                            tmp_timestamp = tag_dict[src_tag].replace("T", " ").replace("Z", "")
+                                            if type(tmp_timestamp) is not datetime:
+                                                tmp_timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S")
+                                                row_dict[dest_tag] = tmp_timestamp
+                                        else:
+                                            row_dict[dest_tag] = tag_dict[src_tag]
 
                             namedrow = settings.EntriesFields(**row_dict)
                             rowsData.append(namedrow)
