@@ -11,8 +11,8 @@ import time
 import pprint
 
 __author__ = 'matiasbevilacqua'
-__version__ = '0.8.0'
-__versiondate__ = "2017-03-18T13:25:47"
+__version__ = '0.8.1'
+__versiondate__ = "2018-10-24T13:25:47"
 
 # Entry types:
 __APPCOMPAT__ = 0
