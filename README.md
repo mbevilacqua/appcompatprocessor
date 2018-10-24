@@ -4,11 +4,13 @@
 
 
 
-
 # AppCompatProcessor (Beta)
 "_Evolving AppCompat/AmCache data analysis beyond grep_"
 
 AppCompatProcessor has been designed to extract additional value from enterprise-wide AppCompat / AmCache data beyond the classic stacking and grepping techniques.
+
+
+If you don't fancy reading check the SANS Threat Hunting 2017 presentation [here](https://www.youtube.com/watch?v=-0bYcD3_bBs)
 
 **Note: Windows platform support has been temporarily removed (expect to see it back shortly though)** 
 
@@ -39,16 +41,16 @@ You need Python 2.7+, libregf and pyregf (python bindings) from https://github.c
 The rest of the requirements you can handle with 'pip install -r requirements.txt'.
 
 **Linux**
-You need Python 2.7+ and 'pip -r requirements.txt' should take care of everything for you.
+You need Python 2.7+ and 'sudo pip install -r requirements.txt' should take care of everything for you.
 If you have issues with libregf or pyregf (python bindings for libregf) you can find them here: https://github.com/libyal/libregf
 
 Note: There seems to be an issue with some libregf versions on some linux environments in which libregf apparently provides file paths encoded in UTF16 (breaking sql inserts for us) when it used to do UTF8. Still trying to pinpoint when and why that happens to handle it correctly.
 
 **SIFT v3 users**
-Sift comes pre-packaged with libregf v20141030 so 'pip -r requirements.txt' will add the few missing pieces easily.
+Sift comes pre-packaged with libregf v20141030 so 'sudo pip install -r requirements.txt' will add the few missing pieces easily.
 
 **Windows**
-Note: ACP is currently broken on Windows due to differences in implementation of multiprocessing! Will bring support back shortly.
+Note: ACP is currently broken on Windows due to differences in implementation of multiprocessing!
 
 
 ### Ingestion Modules
@@ -58,6 +60,7 @@ The following ingestion formats are currently supported:
 * AppCompat in CSV format as produced by ShimCacheParser.py
 > Use flags -t -o and store as one file per host.
 > File naming convention that you'll need to follow: \<HOSTNAME\>.csv.
+> Note that BOM is not currently supported so avoid the '--bom' flag for the time being.
 * AppCompat in Redline format
 > Redline creates a folder named after the hostname in the AnalysisSession1/Audits folder.
 > Aggregate all those folders into a single folder that must be called 'RedlineAudits' and ingest that folder to load everything up.

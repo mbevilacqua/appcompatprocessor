@@ -70,13 +70,29 @@ class Amcache_Raw_hive(Ingest):
         file_object.close()
 
         for r in rows:
-            namedrow = settings.EntriesFields(HostID = hostID, EntryType = settings.__AMCACHE__, RowNumber = rowNumber,
-                FilePath = (None if r.path == None else ntpath.dirname(r.path)), FileName = (None if r.path == None else ntpath.basename(r.path)),
-                Size = r.size, ExecFlag = 'True', SHA1 = (None if r.sha1 == None else r.sha1[4:]),
-                FileDescription = r.file_description, FirstRun = r.first_run, Created = r.created_timestamp, Modified1 = r.modified_timestamp,
-                Modified2 = r.modified_timestamp2, LinkerTS = r.linker_timestamp, Product = r.product, Company = r.company,
-                PE_sizeofimage = r.pe_sizeofimage, Version_number = r.version_number, Version = r.version, Language = r.language,
-                Header_hash = r.header_hash, PE_checksum = r.pe_checksum, SwitchBackContext = r.switchbackcontext, InstanceID = instanceID)
+            namedrow = settings.EntriesFields(HostID = hostID, EntryType = settings.__AMCACHE__,
+                RowNumber = rowNumber,
+                FilePath = (None if r.path == None else ntpath.dirname(r.path)),
+                FileName = (None if r.path == None else ntpath.basename(r.path)),
+                Size = r.size,
+                ExecFlag = 'True',
+                SHA1 = (None if r.sha1 == None else r.sha1[4:]),
+                FileDescription = r.file_description,
+                FirstRun = r.first_run,
+                Created = r.created_timestamp,
+                Modified1 = r.modified_timestamp,
+                Modified2 = r.modified_timestamp2,
+                LinkerTS = r.linker_timestamp,
+                Product = r.product,
+                Company = r.company,
+                PE_sizeofimage = r.pe_sizeofimage,
+                Version_number = r.version_number,
+                Version = r.version,
+                Language = r.language,
+                Header_hash = r.header_hash,
+                PE_checksum = r.pe_checksum,
+                SwitchBackContext = r.switchbackcontext,
+                InstanceID = instanceID)
             rowsData.append(namedrow)
             rowNumber += 1
 
