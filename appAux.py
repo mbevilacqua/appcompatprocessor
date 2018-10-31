@@ -61,7 +61,7 @@ def loadFile(fileFullPath, max_chunk_size = 0):
         file_pointer (StringIO): Data read from fileFullPath
     """
     logger.debug("Loading file %s" % fileFullPath)
-    if ".zip" in fileFullPath:
+    if ".zip/" in fileFullPath:
         m = re.match(r'^((?:.*)\.zip)[\\/](.*)$', fileFullPath)
         if m:
             zip_container = m.group(1)
