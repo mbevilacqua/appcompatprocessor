@@ -199,8 +199,6 @@ class TestAppLoadMP(TestCase):
         self.assertEquals(num_entries1, num_entries2, "test_SimpleLoad failed!")
 
     def test_AddExistingHosts_PreProcessed(self):
-        # todo: Unittest not finishing?
-        return(0)
         load_test_path = self.BuildTestPath("miniXML")
 
         # Get temp db name for the test
@@ -228,8 +226,6 @@ class TestAppLoadMP(TestCase):
         self.assertEquals(num_entries1, num_entries2, "test_AddExistingHosts_PreProcessed failed!")
 
     def test_AddNewHostsAppCompat(self):
-        # todo: Unittest not finishing!
-        return(0)
         load_test_path = self.BuildTestPath("miniXML")
 
         # Get temp db name for the test
