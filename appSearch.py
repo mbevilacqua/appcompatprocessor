@@ -287,7 +287,7 @@ def LoadRegexBulkSearch(file_full_path):
                     if ValidateRegex(clean_regex, None):
                         regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
                 else:
-                    logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
+                    logger.warning("Warning: Looks like a bad formated configuration line, skipping: %s" % line)
         else:
             m = line_regex.match(line)
             if m:
@@ -297,7 +297,7 @@ def LoadRegexBulkSearch(file_full_path):
                 if ValidateRegex(clean_regex, None):
                     regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
             else:
-                logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
+                logger.warning("Warning: Looks like a bad formated configuration line, skipping: %s" % line)
 
     if regex_terms:
         # We setup the concatenation of regexes with no filters as searchTermRegex"
