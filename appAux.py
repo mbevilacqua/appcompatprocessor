@@ -54,6 +54,7 @@ def checkLock(filefullpath):
     print "File not locked"
 
 
+# todo: Might be worth closing cached zip file objects on Injest.processFile for huge grabstuffr archives to reduce memory pressure a little bit (we can't reduce peack consumption though)
 def loadFile(file_fullpath, max_chunk_size = 0):
     """Abstracts loading a regular file and a file from within a zip archive.
     Args:
