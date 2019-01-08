@@ -28,10 +28,12 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
-# ZipFile cache
-zipCache = {}
 spinner = itertools.cycle(['-', '\\', '|', '/'])
 
+# ZipFile cache
+zipCache = {}
+zipCache_hits = 0
+zipCache_misses = 0
 
 def getFileSize(fileobject):
     fileobject.seek(0,2) # move the cursor to the end of the file
@@ -60,6 +62,9 @@ def loadFile(fileFullPath, max_chunk_size = 0):
     Returns:
         file_pointer (StringIO): Data read from fileFullPath
     """
+    global zipCache
+    global zipCache_hits
+    global zipCache_misses
     logger.debug("Loading file %s" % fileFullPath)
     if ".zip/" in fileFullPath:
         m = re.match(r'^((?:.*)\.zip)[\\/](.*)$', fileFullPath)
@@ -68,11 +73,15 @@ def loadFile(fileFullPath, max_chunk_size = 0):
             file_relative_path = m.group(2)
             # If not in the zipCache we add it
             if zip_container not in zipCache:
+                zipCache_misses +=1
                 if zipfile.is_zipfile(zip_container):
                     zipCache[zip_container] = zipfile.ZipFile(zip_container)
                 else:
                     logger.error("Invalid ZIP file found: %s" % fileFullPath)
                     return None
+            else:
+                zipCache_hits += 1
+                # print("ZipCache hits / misses: %d/%d" % (zipCache_hits, zipCache_misses))
 
             # Extract file_pointer from zip:
             file_pointer = StringIO(zipCache[zip_container].read(file_relative_path))
