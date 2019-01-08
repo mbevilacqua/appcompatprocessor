@@ -518,15 +518,15 @@ def processArchives(filename, file_filter):
             else:
                 # Process normal zip file:
                 for zipped_filename in zipFileList:
-                    if re.match(file_filter, zipped_filename):
+                    if re.match(file_filter, '\\' + zipped_filename):
                         if filename.endswith('.zip'):
                             files_to_process.extend(processArchives(os.path.join(zip_archive_filename, zipped_filename), file_filter))
                         else :
                             logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
                             files_to_process.append((os.path.join(zip_archive_filename, zipped_filename), None))
                     else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
-                if len(files_to_process) == 0:
-                    logger.error("No valid files found!")
+                # if len(files_to_process) == 0:
+                #     logger.error("No valid files found!")
             zip_archive.close()
         except (IOError, zipfile.BadZipfile, struct.error), err:
             logger.error("Error reading zip archive: %s" % zip_archive_filename)
