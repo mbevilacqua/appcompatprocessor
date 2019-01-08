@@ -37,6 +37,8 @@ from Ingest import appcompat_raw_hive
 from Ingest import appcompat_miracquisition
 from Ingest import amcache_raw_hive
 from Ingest import appcompat_mirShimShady_v1
+import json
+
 try:
     import pyregf
 except ImportError:
@@ -339,7 +341,7 @@ def CalculateInstanceID(file_fullpath, ingest_plugin):
     return instanceID
 
 
-def GetIDForHosts(fileFullPathList, DB):
+def GetIDForHosts(files_to_process, DB):
     # todo: With the improved magic_checks this now takes quite a while
     # todo: multiprocess, merge into host ID generation or at least add some GUI feedback.
     # Returns: (filePath, instanceID, hostname, hostID, ingest_type)
@@ -349,7 +351,7 @@ def GetIDForHosts(fileFullPathList, DB):
     progress_current = 0
 
     # Determine plugin_type and hostname
-    for file_name_fullpath in fileFullPathList:
+    for (file_name_fullpath, file_name_original) in files_to_process:
         hostName = None
         ingest_type = None
         loop_counter = 0
@@ -364,19 +366,36 @@ def GetIDForHosts(fileFullPathList, DB):
                                    (ntpath.basename(file_name_fullpath), tmp_file_size))
                 break
             ingest_type = ingest_plugins_types_stack[0]
-            if ingest_plugins[ingest_type].matchFileNameFilter(file_name_fullpath):
-                # Check magic:
-                try:
-                    magic_check = ingest_plugins[ingest_type].checkMagic(file_name_fullpath)
-                    if isinstance(magic_check, tuple):
-                        logger.error("Report bug")
-                    else: magic_check_res = magic_check
-                    if magic_check_res:
-                        # Magic OK, go with this plugin
-                        hostName = ingest_plugins[ingest_type].getHostName(file_name_fullpath)
-                        break
-                except Exception as e:
-                    logger.exception("Error processing: %s (%s)" % (file_name_fullpath, str(e)))
+            if file_name_original is None:
+                if ingest_plugins[ingest_type].matchFileNameFilter(file_name_fullpath):
+                    # Check magic:
+                    try:
+                        magic_check = ingest_plugins[ingest_type].checkMagic(file_name_fullpath)
+                        if isinstance(magic_check, tuple):
+                            logger.error("Report bug")
+                        else: magic_check_res = magic_check
+                        if magic_check_res:
+                            # Magic OK, go with this plugin
+                            hostName = ingest_plugins[ingest_type].getHostName(file_name_fullpath)
+                            break
+                    except Exception as e:
+                        logger.exception("Error processing: %s (%s)" % (file_name_fullpath, str(e)))
+            else:
+                if ingest_plugins[ingest_type].matchFileNameFilter(file_name_original):
+                    # Check magic:
+                    try:
+                        magic_check = ingest_plugins[ingest_type].checkMagic(file_name_fullpath)
+                        if isinstance(magic_check, tuple):
+                            logger.error("Report bug")
+                        else:
+                            magic_check_res = magic_check
+                        if magic_check_res:
+                            # Magic OK, go with this plugin
+                            hostName = ingest_plugins[ingest_type].getHostName(file_name_original)
+                            break
+                    except Exception as e:
+                        logger.exception("Error processing: %s (%s)" % (file_name_fullpath, str(e)))
+
             # Emulate stack with list to minimize internal looping (place last used plugin at the top)
             ingest_plugins_types_stack.remove(ingest_type)
             ingest_plugins_types_stack.insert(len(ingest_plugins_types_stack), ingest_type)
@@ -455,6 +474,25 @@ def GetIDForHosts(fileFullPathList, DB):
     return hostsProcess
 
 
+def parseManifestAuditFileName(jsondata, zip_archive_filename):
+    # Parse manifest.json data and return files which will need to be processed
+    file_list = []
+    # todo: We'll get in trouble with NetBios names that use hyphens, transform into a robust regex:
+    hostname = os.path.basename(zip_archive_filename).split("-")[0]
+    data = json.load(jsondata)
+    for audit in data['audits']:
+        if 'install' not in audit['generator']:
+            if 'plugin' not in audit['generator'] and len(audit['results']) == 1:
+                file_list.append((os.path.join(zip_archive_filename, audit['results'][0]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
+            elif 'plugin' in audit['generator'] and len(audit['results']) <= 1:
+                pass
+            elif 'plugin' in audit['generator'] and len(audit['results']) == 2:
+                file_list.append((os.path.join(zip_archive_filename, audit['results'][1]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
+            else:
+                logger.error("More results than expected on HX audit manifest.json: %s" % zip_archive_filename)
+    return file_list
+
+
 def processArchives(filename, file_filter):
     # Process zip file if required and return a list of files to process
     files_to_process = []
@@ -463,25 +501,38 @@ def processArchives(filename, file_filter):
         try:
             zip_archive_filename = filename
             # Open the zip archive:
-            zip_archive = zipfile.ZipFile(zip_archive_filename, "r")
+            zip_archive = zipfile.ZipFile(loadFile(zip_archive_filename), "r")
             zipFileList = zip_archive.namelist()
-            zip_archive.close()
             countTotalFiles = len(zipFileList)
             logger.info("Total files in %s: %d" % (zip_archive_filename, countTotalFiles))
             logger.info("Hold on while we check the zipped files...")
 
-            for zipped_filename in zipFileList:
-                if re.match(file_filter, zipped_filename):
-                    logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
-                    files_to_process.append(os.path.join(zip_archive_filename, zipped_filename))
-                else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
-            if len(files_to_process) == 0:
-                logger.error("No valid files found!")
+            # Check if it's an HX audit zip file:
+            if 'manifest.json' in zipFileList:
+                jsondata = loadFile(os.path.join(zip_archive_filename, 'manifest.json'))
+                audit_result_filenames = parseManifestAuditFileName(jsondata, zip_archive_filename)
+                for (file_name_fullpath, file_name_original) in audit_result_filenames:
+                    logger.debug("Adding file to process: %s" % file_name_fullpath)
+                    files_to_process.append((file_name_fullpath, file_name_original))
+
+            else:
+                # Process normal zip file:
+                for zipped_filename in zipFileList:
+                    if re.match(file_filter, '\\' + zipped_filename):
+                        if filename.endswith('.zip'):
+                            files_to_process.extend(processArchives(os.path.join(zip_archive_filename, zipped_filename), file_filter))
+                        else :
+                            logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
+                            files_to_process.append((os.path.join(zip_archive_filename, zipped_filename), None))
+                    else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
+                # if len(files_to_process) == 0:
+                #     logger.error("No valid files found!")
+            zip_archive.close()
         except (IOError, zipfile.BadZipfile, struct.error), err:
             logger.error("Error reading zip archive: %s" % zip_archive_filename)
             exit(-1)
     else:
-        files_to_process.append(filename)
+        files_to_process.append((filename, None))
     return files_to_process
 
 def searchFolders(pathToLoad, file_filter):
@@ -519,6 +570,7 @@ def searchRedLineAudits(pathToLoad):
 def appLoadMP(pathToLoad, dbfilenameFullPath, maxCores, governorOffFlag):
     global _tasksPerJob
 
+    # Adding original filename to the tuple stored in files_to_process: (filename to load data from, original filename)
     files_to_process = []
     conn = None
 

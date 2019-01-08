@@ -28,10 +28,12 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
-# ZipFile cache
-zipCache = {}
 spinner = itertools.cycle(['-', '\\', '|', '/'])
 
+# ZipFile cache
+zipCache = {}
+zipCache_hits = 0
+zipCache_misses = 0
 
 def getFileSize(fileobject):
     fileobject.seek(0,2) # move the cursor to the end of the file
@@ -52,36 +54,60 @@ def checkLock(filefullpath):
     print "File not locked"
 
 
-def loadFile(fileFullPath, max_chunk_size = 0):
+# todo: Might be worth closing cached zip file objects on Injest.processFile for huge grabstuffr archives to reduce memory pressure a little bit (we can't reduce peack consumption though)
+def loadFile(file_fullpath, max_chunk_size = 0):
     """Abstracts loading a regular file and a file from within a zip archive.
     Args:
-        fileFullPath (str): Full path to file to load
+        file_fullpath (str): Full path to file to load
         max_chunk_size (int): maximum number of bytes to be read from the file
     Returns:
         file_pointer (StringIO): Data read from fileFullPath
     """
-    logger.debug("Loading file %s" % fileFullPath)
-    if ".zip" in fileFullPath:
-        m = re.match(r'^((?:.*)\.zip)[\\/](.*)$', fileFullPath)
+    global zipCache
+    global zipCache_hits
+    global zipCache_misses
+    logger.debug("Loading file %s" % file_fullpath)
+    if ".zip/" in file_fullpath:
+        m = re.match(r'^((?:.*)\.zip)[\\/](.*)$', file_fullpath)
         if m:
             zip_container = m.group(1)
-            file_relative_path = m.group(2)
-            # If not in the zipCache we add it
-            if zip_container not in zipCache:
-                if zipfile.is_zipfile(zip_container):
-                    zipCache[zip_container] = zipfile.ZipFile(zip_container)
+            if m.lastindex > 1:
+                file_fullpath_unprocessed = m.group(2)
+                if '.zip' in file_fullpath_unprocessed:
+                    m = re.match(r'^(.*)(?:\.zip[\\/](.*))*$', file_fullpath_unprocessed)
+                    if m:
+                        zip_container_relative_path = m.group(1)
+                        if m.lastindex > 1:
+                            file_fullpath_unprocessed = m.group(2)
+                        else:
+                            file_fullpath_unprocessed = None
+                    else:
+                        logger.error("Issue extracting container and relative path from ZIP file: %s" % file_fullpath)
                 else:
-                    logger.error("Invalid ZIP file found: %s" % fileFullPath)
+                    zip_container_relative_path = file_fullpath_unprocessed
+
+                # If not in the zipCache we add it
+            if zip_container not in zipCache:
+                zipCache_misses +=1
+                if zipfile.is_zipfile(loadFile(zip_container)):
+                    zipCache[zip_container] = zipfile.ZipFile(loadFile(zip_container))
+                else:
+                    logger.error("Invalid ZIP file found: %s" % file_fullpath)
                     return None
+            else:
+                zipCache_hits += 1
+                # print("ZipCache hits / misses: %d/%d" % (zipCache_hits, zipCache_misses))
 
             # Extract file_pointer from zip:
-            file_pointer = StringIO(zipCache[zip_container].read(file_relative_path))
-            if max_chunk_size != 0: file_pointer = StringIO(file_pointer.read(max_chunk_size))
+            file_pointer = StringIO(zipCache[zip_container].read(zip_container_relative_path))
+            if max_chunk_size != 0:
+                file_pointer = StringIO(file_pointer.read(max_chunk_size))
+
         else:
-            logger.error("Issue extracting container and relative path from ZIP file: %s" % fileFullPath)
+            logger.error("Issue extracting container and relative path from ZIP file: %s" % file_fullpath)
     else:
             # Extract file_pointer:
-            input_file = open(fileFullPath, 'rb')
+            input_file = open(file_fullpath, 'rb')
             if max_chunk_size == 0:
                 file_pointer = StringIO(input_file.read())
             else: file_pointer = StringIO(input_file.read(max_chunk_size))
