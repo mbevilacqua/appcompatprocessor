@@ -101,7 +101,7 @@ class Appcompat_Raw_hive(Ingest):
 
         # Process file using ShimCacheParser
         try:
-            entries = read_from_hive(file_fullpath, True)
+            entries = read_from_hive(loadFile(file_fullpath), True)
             if not entries:
                 logger.warning("[ShimCacheParser] found no entries for %s" % file_fullpath)
                 return False
