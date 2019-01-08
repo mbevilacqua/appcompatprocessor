@@ -501,7 +501,7 @@ def processArchives(filename, file_filter):
         try:
             zip_archive_filename = filename
             # Open the zip archive:
-            zip_archive = zipfile.ZipFile(zip_archive_filename, "r")
+            zip_archive = zipfile.ZipFile(loadFile(zip_archive_filename), "r")
             zipFileList = zip_archive.namelist()
             countTotalFiles = len(zipFileList)
             logger.info("Total files in %s: %d" % (zip_archive_filename, countTotalFiles))
@@ -519,8 +519,11 @@ def processArchives(filename, file_filter):
                 # Process normal zip file:
                 for zipped_filename in zipFileList:
                     if re.match(file_filter, zipped_filename):
-                        logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
-                        files_to_process.append((os.path.join(zip_archive_filename, zipped_filename), None))
+                        if filename.endswith('.zip'):
+                            files_to_process.extend(processArchives(os.path.join(zip_archive_filename, zipped_filename), file_filter))
+                        else :
+                            logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
+                            files_to_process.append((os.path.join(zip_archive_filename, zipped_filename), None))
                     else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
                 if len(files_to_process) == 0:
                     logger.error("No valid files found!")
