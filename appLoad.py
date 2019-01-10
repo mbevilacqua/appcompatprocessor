@@ -11,7 +11,7 @@ import ntpath
 from contextlib import closing
 import time
 import struct
-from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size, file_len
+from appAux import update_progress, chunks, loadFile, psutil_phymem_usage, file_size
 import appDB
 import settings
 from ShimCacheParser_ACP import read_mir, write_it
@@ -315,6 +315,7 @@ class Task(object):
 
     def __call__(self):
         rowsData = []
+        last_number_of_rows = 0
         for item in self.data:
             file_fullpath = item[0]
             assert (file_fullpath)
@@ -328,6 +329,8 @@ class Task(object):
             try:
                 logger.debug("Processing file %s" % file_fullpath)
                 ingest_class_instance.processFile(file_fullpath, hostID, instanceID, rowsData)
+                if last_number_of_rows == len(rowsData):
+                    logger.warning("No data was extracted from: %s" % file_fullpath)
             except Exception as e:
                 logger.error("Error processing: %s (%s)" % (file_fullpath, str(e)))
 
@@ -355,6 +358,7 @@ def GetIDForHosts(files_to_process, DB):
         hostName = None
         ingest_type = None
         loop_counter = 0
+        magic_check_res = False
         logger.info("Calculating ID for: %s" % file_name_fullpath)
         while True:
             if loop_counter > len(ingest_plugins_types_stack):
@@ -400,14 +404,19 @@ def GetIDForHosts(files_to_process, DB):
             ingest_plugins_types_stack.remove(ingest_type)
             ingest_plugins_types_stack.insert(len(ingest_plugins_types_stack), ingest_type)
             loop_counter += 1
-        if hostName is not None and len(hostName) != 0:
-            if hostName in hostsTest:
-                hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
-            else:
-                hostsTest[hostName] = []
-                hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
+
+        if not magic_check_res:
+            logger.warning("Magic check failed (or audit returned no results), can't process: %s [%d bytes] (skipping file)" % (
+            ntpath.basename(file_name_fullpath), file_size(file_name_fullpath)))
         else:
-            logger.warning("Something went very wrong, can't extract a hostname from: %s [%d bytes] (skipping file)" % (ntpath.basename(file_name_fullpath), file_size(file_name_fullpath)))
+            if hostName is not None and len(hostName) != 0:
+                if hostName in hostsTest:
+                    hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
+                else:
+                    hostsTest[hostName] = []
+                    hostsTest[hostName].append((file_name_fullpath, ingest_plugins[ingest_type]))
+            else:
+                logger.warning("Something went very wrong, can't process: %s [%d bytes] (skipping file)" % (ntpath.basename(file_name_fullpath), file_size(file_name_fullpath)))
 
     progress_total = len(hostsTest.keys())
     # Iterate over hosts. If host exists in DB grab rowID else create and grab rowID.
@@ -477,21 +486,51 @@ def GetIDForHosts(files_to_process, DB):
 def parseManifestAuditFileName(jsondata, zip_archive_filename):
     # Parse manifest.json data and return files which will need to be processed
     file_list = []
-    # todo: We'll get in trouble with NetBios names that use hyphens, transform into a robust regex:
-    hostname = os.path.basename(zip_archive_filename).split("-")[0]
-    data = json.load(jsondata)
-    for audit in data['audits']:
-        if 'install' not in audit['generator']:
-            if 'plugin' not in audit['generator'] and len(audit['results']) == 1:
-                file_list.append((os.path.join(zip_archive_filename, audit['results'][0]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
-            elif 'plugin' in audit['generator'] and len(audit['results']) <= 1:
-                pass
-            elif 'plugin' in audit['generator'] and len(audit['results']) == 2:
-                file_list.append((os.path.join(zip_archive_filename, audit['results'][1]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
-            else:
-                logger.error("More results than expected on HX audit manifest.json: %s" % zip_archive_filename)
-    return file_list
+    m = re.match(r'^.*(?:\\|\/)(.*)-.{22}\..{3}$', zip_archive_filename)
+    if m:
+        hostname = m.group(1)
+        data = json.load(jsondata)
+        if 'audits' in data:
+            for audit in data['audits']:
+                if 'sysinfo' in audit['generator']: continue
+                if 'install' not in audit['generator']:
 
+                    if 'registry-api' in audit['generator'] or 'w32registryapi' in audit['generator']:
+                        for result in audit['results']:
+                            if 'application/xml' in result['type']:
+                                file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
+                            else: continue
+                    elif 'plugin-execute' in audit['generator']:
+                        for result in audit['results']:
+                            if 'application/vnd.mandiant.issues+xml' not in result['type']:
+                                file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
+                            else: continue
+                    elif 'w32scripting-persistence' in audit['generator']:
+                        for result in audit['results']:
+                            if 'application/vnd.mandiant.issues+xml' not in result['type']:
+                                file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
+                            else: continue
+                    elif 'file-acquisition' in audit['generator']:
+                        for result in audit['results']:
+                            if 'application/vnd.mandiant.issues+xml' not in result['type']:
+                                file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
+                            else: continue
+                    # elif 'plugin' not in audit['generator'] and len(audit['results']) == 1:
+                    #     file_list.append((os.path.join(zip_archive_filename, audit['results'][0]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
+                    # elif 'plugin' in audit['generator'] and len(audit['results']) <= 1:
+                    #     pass
+                    # elif 'plugin' in audit['generator'] and len(audit['results']) == 2:
+                    #     file_list.append((os.path.join(zip_archive_filename, audit['results'][1]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
+                    # else:
+                    #     logger.error("Unknown result type/format on HX audit manifest.json: %s (please report!)" % zip_archive_filename)
+        else:
+            logger.warning("HX script execution failed for host: %s, ignoring" % hostname)
+    else:
+        logger.error("Unable to extract hostname on parseManifestAuditFileName: %s" % zip_archive_filename)
+
+    if len(file_list) == 0:
+        logger.warning("No file that could be processed found on manifest.json (likely to be a failed script run) for: %s [%d bytes]" % (zip_archive_filename, file_size(zip_archive_filename)))
+    return file_list
 
 def processArchives(filename, file_filter):
     # Process zip file if required and return a list of files to process
@@ -512,7 +551,7 @@ def processArchives(filename, file_filter):
                 jsondata = loadFile(os.path.join(zip_archive_filename, 'manifest.json'))
                 audit_result_filenames = parseManifestAuditFileName(jsondata, zip_archive_filename)
                 for (file_name_fullpath, file_name_original) in audit_result_filenames:
-                    logger.debug("Adding file to process: %s" % file_name_fullpath)
+                    logger.debug("Adding file to process %s from manifest.json %s" % (file_name_fullpath, zip_archive_filename))
                     files_to_process.append((file_name_fullpath, file_name_original))
 
             else:
@@ -521,8 +560,8 @@ def processArchives(filename, file_filter):
                     if re.match(file_filter, '\\' + zipped_filename):
                         if filename.endswith('.zip'):
                             files_to_process.extend(processArchives(os.path.join(zip_archive_filename, zipped_filename), file_filter))
-                        else :
-                            logger.debug("Adding file to process: %s" % os.path.join(zip_archive_filename, zipped_filename))
+                        else:
+                            logger.debug("Adding file to process %s from zip archive" % (os.path.join(zip_archive_filename, zipped_filename), zip_archive_filename))
                             files_to_process.append((os.path.join(zip_archive_filename, zipped_filename), None))
                     else: logger.debug("Ignoring file: %s" % os.path.join(zip_archive_filename, zipped_filename))
                 # if len(files_to_process) == 0:
@@ -581,7 +620,7 @@ def appLoadMP(pathToLoad, dbfilenameFullPath, maxCores, governorOffFlag):
     # Calculate aggreagate file_filter for all ingest types supported:
     file_filter = '|'.join([v.getFileNameFilter() for k,v in ingest_plugins.iteritems()])
     # Add zip extension
-    file_filter += "|.*\.zip"
+    file_filter += "|.*\.zip$"
 
     # Check if we're loading Redline data
     if os.path.isdir(pathToLoad) and os.path.basename(pathToLoad).lower() == 'RedlineAudits'.lower():
