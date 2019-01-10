@@ -114,7 +114,7 @@ class Appcompat_mirlua_v2(Ingest):
                     # From time to time we get some entries with no real data on them for some unknown reason, skip for now
                     if 'AppCompatPath' in tag_dict:
                         if tag_dict['AppCompatPath'] == 'N/A':
-                            logger.debug("ShimCache entry with no AppCompatPath [ControlSetSeq: %s], entry: %s. (skipping entry)" % (tag_dict['ControlSetSeq'], file_fullpath))
+                            logger.debug("ShimCache entry with no AppCompatPath (Sequence # %s) on %s. (skipping entry)" % (tag_dict['Sequence'], file_fullpath))
                             break
 
                     # Check we have everything we need and ignore entries with critical XML errors on them
