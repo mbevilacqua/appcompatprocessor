@@ -486,7 +486,7 @@ def GetIDForHosts(files_to_process, DB):
 def parseManifestAuditFileName(jsondata, zip_archive_filename):
     # Parse manifest.json data and return files which will need to be processed
     file_list = []
-    m = re.match(r'^.*(?:\\|\/)(.*)-.{22}\..{3}$', zip_archive_filename)
+    m = re.match(r'^.*(?:\\|\/)(.*)[-_].{22}\..{3}$', zip_archive_filename)
     if m:
         hostname = m.group(1)
         data = json.load(jsondata)
