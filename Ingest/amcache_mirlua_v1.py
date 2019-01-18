@@ -188,9 +188,9 @@ class Amcache_mirlua_v1(Ingest):
                         if 'ProgramName' in tag_dict:
                             tag_dict['AmCacheFilePath'] = tag_dict['ProgramName']
                         else:
-                            # If we have no thing we can use here we skip the entry for now
+                            # If we have nothing we can use here we skip the entry for now
                             # todo: pretty-print the tag_dict to the log file
-                            logger.warning("AmCache entry with no AppCompatPath or ProgramName. (skipping entry)")
+                            logger.warning("AmCache entry with no AppCompatPath or ProgramName. (skipping entry) %s" % file_fullpath)
                             break
 
                     # If the entry is valid do some housekeeping:
