@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Ripped by Matias Bevilacqua from Will Ballenthin's python-registry amcache sample
-# Refactored to work with ligref python bindings for speed purposes
+# Refactored to work with libregf python bindings for speed purposes, added support for Windows 10
 
 #    The origianl code was part of the python-registry module.
 #
@@ -40,17 +40,17 @@ except:
     from StringIO import StringIO
 
 from appAux import update_progress, chunks, loadFile, checkLock
-
+# minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
 logger = logging.getLogger(__name__)
+
 Field = namedtuple("Field", ["name", "getter"])
+
 
 def make_value_getter(value_name):
     """ return a function that fetches the value from the registry key """
     def _value_getter(key):
         try:
-            if key.number_of_sub_keys == 0:
-                return key.get_value_by_name(value_name).get_data_as_string()
-            else: return key[0].get_value_by_name(value_name).get_data_as_string()
+            return key.get_value_by_name(value_name).get_data_as_string()
         except:
             return None
     return _value_getter
@@ -59,10 +59,7 @@ def make_integer_value_getter(value_name):
     """ return a function that fetches the value from the registry key """
     def _value_getter(key):
         try:
-            if key.number_of_sub_keys == 0:
-                return key.get_value_by_name(value_name).get_data_as_integer()
-            else:
-                return key[0].get_value_by_name(value_name).get_data_as_integer()
+            return key.get_value_by_name(value_name).get_data_as_integer()
         except:
             return None
     return _value_getter
@@ -75,15 +72,9 @@ def make_windows_timestamp_value_getter(value_name):
     f = make_value_getter(value_name)
     def _value_getter(key):
         try:
-            if key.number_of_sub_keys == 0:
-                if key.get_value_by_name(value_name) != None:
-                    return parse_windows_timestamp(key.get_value_by_name(value_name).get_data_as_integer() or 0)
-                else: return datetime.min
-            else:
-                if key[0].get_value_by_name(value_name) != None:
-                    return parse_windows_timestamp(key[0].get_value_by_name(value_name).get_data_as_integer() or 0)
-                else:
-                    return datetime.min
+            if key.get_value_by_name(value_name) != None:
+                return parse_windows_timestamp(key.get_value_by_name(value_name).get_data_as_integer() or 0)
+            else: return datetime.min
         except ValueError:
             return datetime.min
     return _value_getter
@@ -109,14 +100,9 @@ def make_unix_timestamp_value_getter(value_name):
     def _value_getter(key):
 
         try:
-            if key.number_of_sub_keys == 0:
-                if key.get_value_by_name(value_name) != None:
-                    return parse_unix_timestamp(key.get_value_by_name(value_name).get_data_as_integer() or 0)
-                else: return datetime.min
-            else:
-                if key[0].get_value_by_name(value_name) != None:
-                    return parse_unix_timestamp(key[0].get_value_by_name(value_name).get_data_as_integer() or 0)
-                else: return datetime.min
+            if key.get_value_by_name(value_name) != None:
+                return parse_unix_timestamp(key.get_value_by_name(value_name).get_data_as_integer() or 0)
+            else: return datetime.min
         except ValueError:
             return datetime.min
     return _value_getter
@@ -160,7 +146,7 @@ FIELDS = [
     Field("sha1", make_value_getter("101")),
     Field("size", make_integer_value_getter("6")),
     Field("file_description", make_value_getter("c")),
-    Field("first_run", lambda key: key[0].get_last_written_time()),
+    Field("first_run", lambda key: key.get_last_written_time()),
     Field("created_timestamp", make_windows_timestamp_value_getter("12")),
     Field("modified_timestamp", make_windows_timestamp_value_getter("11")),
     Field("modified_timestamp2", make_windows_timestamp_value_getter("17")),
@@ -182,9 +168,28 @@ FIELDS_win10 = [
     Field("path", make_value_getter("LowerCaseLongPath")),
     Field("sha1", make_value_getter("FileId")),
     Field("size", make_integer_value_getter("Size")),
+    Field("file_description", lambda key: None),
+    Field("first_run", lambda key: key.get_last_written_time()),
+    Field("created_timestamp", lambda key: datetime.min),
+    Field("modified_timestamp", lambda key: datetime.min),
+    Field("modified_timestamp2", lambda key: datetime.min),
+    Field("linker_timestamp", lambda key: datetime.min),
+    Field("product", lambda key: None),
+    Field("company", lambda key: None),
+    Field("pe_sizeofimage", lambda key: None),
+    Field("version_number", lambda key: None),
+    Field("version", lambda key: None),
+    Field("language", lambda key: None),
+    Field("header_hash", lambda key: None),
+    Field("pe_checksum", lambda key: None),
+    Field("id", lambda key: None),
+    Field("switchbackcontext", lambda key: None),
+
+
 ]
 
-ExecutionEntry_win10 = namedtuple("ExecutionEntry", map(lambda e: e.name, FIELDS))
+ExecutionEntry = namedtuple("ExecutionEntry", map(lambda e: e.name, FIELDS))
+ExecutionEntry_win10 = namedtuple("ExecutionEntry_win10", map(lambda e: e.name, FIELDS_win10))
 
 
 def parse_execution_entry(key):
@@ -238,7 +243,7 @@ def parse_execution_entries(regf):
         sub_keys = get_sub_keys(regf.get_key_by_path(r'Root\File'))
         for volumekey, volumePath in sub_keys:
             for filekey in get_sub_keys(volumekey):
-                ret.append(parse_execution_entry(filekey))
+                ret.append(parse_execution_entry(filekey[0]))
 
     return ret
 
