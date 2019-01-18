@@ -1,3 +1,5 @@
+# Tweaked from https://github.com/mandiant/ShimCacheParser/commit/c4772b9dc72fd50ba210b7b0636c2d20bea68bc5
+
 # ShimCacheParser.py
 #
 # Andrew Davis, andrew.davis@mandiant.com
@@ -57,6 +59,7 @@ WIN81_MAGIC = '10ts'
 
 # Values used by Windows 10
 WIN10_STATS_SIZE = 0x30
+WIN10_CREATORS_STATS_SIZE = 0x34
 WIN10_MAGIC = '10ts'
 CACHE_HEADER_SIZE_NT6_4 = 0x30
 CACHE_MAGIC_NT6_4 = 0x30
@@ -273,6 +276,12 @@ def read_cache(cachebin, quiet=False):
                 print "[+] Found Windows 10 Apphelp Cache data..."
             return read_win10_entries(cachebin, WIN10_MAGIC)
 
+        # Windows 10 Creators Update will use a different STATS_SIZE, account for it
+        elif len(cachebin) > WIN10_CREATORS_STATS_SIZE and cachebin[WIN10_CREATORS_STATS_SIZE:WIN10_CREATORS_STATS_SIZE+4] == WIN10_MAGIC:
+            if not quiet:
+                print "[+] Found Windows 10 Creators Update Apphelp Cache data..."
+            return read_win10_entries(cachebin, WIN10_MAGIC, creators_update=True)
+
         else:
             print "[-] Got an unrecognized magic value of 0x%x... bailing" % magic
             return None
@@ -343,7 +352,10 @@ def read_win10_entries(bin_data, ver_magic):
     entry_list = []
 
     # Skip past the stats in the header
-    cache_data = bin_data[WIN10_STATS_SIZE:]
+    if creators_update:
+        cache_data = bin_data[WIN10_CREATORS_STATS_SIZE:]
+    else:
+        cache_data = bin_data[WIN10_STATS_SIZE:]
 
     data = sio.StringIO(cache_data)
     while data.tell() < len(cache_data):
@@ -601,28 +613,55 @@ def read_from_hive(hive, quiet=False):
         print "[-] Error parsing %s: %s" % (hive, err)
         sys.exit(1)
 
-    root = reg.root().subkeys()
-    for key in root:
-        # Check each ControlSet.
-        try:
-            if 'controlset' in key.name().lower():
-                session_man_key = reg.open('%s\\Control\\Session Manager' % key.name())
-                for subkey in session_man_key.subkeys():
-                    # Read the Shim Cache structure.
-                    if ('appcompatibility' in subkey.name().lower() or
-                        'appcompatcache' in subkey.name().lower()):
-                        bin_data = str(subkey['AppCompatCache'].value())
-                        tmp_list = read_cache(bin_data, quiet)
+    # Partial hive
+    partial_hive_path = ('Session Manager', 'AppCompatCache', 'AppCompatibility')
+    if reg.root().path() in partial_hive_path:
+        if reg.root().path() == 'Session Manager':
+            # Only Session Manager
+            # For example extracted with: reg save "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager" "c:\temp\SessionManager.hve" /y
+            print "[+] Partial hive -- 'Session Manager'"
+            if reg.root().find_key('AppCompatCache').values():
+                print "[+] Partial hive -- 'AppCompatCache' or 'AppCompatibility'"
+                keys = reg.root().find_key('AppCompatCache').values()
+        else:
+            # Partial hive AppCompatCache or AppCompatibility
+            # reg save "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache" "c:\temp\appCompatCache.hve" /y
+            # reg save "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatibility" "c:\temp\AppCompatibility.hve" /y
+            keys = reg.root().values()
+        for k in keys:
+            bin_data = str(k.value())
+            tmp_list = read_cache(bin_data)
 
-                        if tmp_list:
-                            for row in tmp_list:
-                                if g_verbose:
-                                    row.append(subkey.path())
-                                if row not in out_list:
-                                    out_list.append(row)
+            if tmp_list:
+                for row in tmp_list:
+                    if g_verbose:
+                        row.append(k.name())
+                    if row not in out_list:
+                        out_list.append(row)
+    else:
+        # Complete hive
+        root = reg.root().subkeys()
+        for key in root:
+            # Check each ControlSet.
+            try:
+                if 'controlset' in key.name().lower():
+                    session_man_key = reg.open('%s\\Control\\Session Manager' % key.name())
+                    for subkey in session_man_key.subkeys():
+                        # Read the Shim Cache structure.
+                        if ('appcompatibility' in subkey.name().lower() or
+                            'appcompatcache' in subkey.name().lower()):
+                            bin_data = str(subkey['AppCompatCache'].value())
+                            tmp_list = read_cache(bin_data, quiet)
 
-        except Registry.RegistryKeyNotFoundException:
-            continue
+                            if tmp_list:
+                                for row in tmp_list:
+                                    if g_verbose:
+                                        row.append(subkey.path())
+                                    if row not in out_list:
+                                        out_list.append(row)
+
+            except Registry.RegistryKeyNotFoundException:
+                continue
 
     if len(out_list) == 0:
         return None
@@ -846,7 +885,7 @@ def read_zip(zip_name):
                 hostname = '-'.join(filename.split('-')[:-3])
                 xml_file = archive.open(item)
 
-                # Catch potentially corrupt XML data.
+                # Catch possibly corrupt MIR XML data.
                 try:
                     out_list = read_mir(xml_file, quiet=True)
                 except(struct.error, et.ParseError), err:
@@ -866,7 +905,7 @@ def read_zip(zip_name):
                 print "[-] Error opening file: %s in MIR archive: %s" % (item, err)
                 continue
         # Add the final header.
-        final_list.insert(0, ("Hostname", "Last Modified", "Last Execution",
+        final_list.insert(0, ("Hostname", "Last Modified", "Last Update",
                               "Path", "File Size", "File Executed", "Key Path"))
         return final_list
 

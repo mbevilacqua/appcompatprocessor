@@ -8,7 +8,7 @@ from contextlib import closing
 import time
 import ntpath
 import appDB
-from appAux import update_progress, outputcolum, file_len
+from appAux import update_progress, outputcolum, file_size
 import hashlib
 import operator
 from datetime import timedelta
@@ -679,7 +679,7 @@ def appSearchMP(dbfilenameFullPath, searchType, search_space, options):
     if num_hits.value:
         logger.info("Head:")
         # Dump head of output file:
-        num_lines = file_len(options.outputFile)
+        num_lines = file_size(options.outputFile)
         from itertools import islice
         with open(options.outputFile) as myfile:
             head = list(islice(myfile, 5))

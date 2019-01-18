@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Appcompat_hxregistryaudit(Ingest):
     ingest_type = "appcompat_hxregistryaudit"
-    file_name_filter = "(?:.*)(?:\/|\\\)(.*)_[A-Za-z0-9]{22}\.zip"
+    file_name_filter = "(?:.*)(?:\/|\\\)(.*)_[A-Za-z0-9]{22}\.zip$"
 
     def __init__(self):
         super(Appcompat_hxregistryaudit, self).__init__()

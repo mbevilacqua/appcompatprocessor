@@ -234,14 +234,6 @@ def psutil_phymem_usage():
     return percent
 
 
-def file_len(fname):
-    with open(fname) as f:
-        i = 0
-        for i, l in enumerate(f):
-            pass
-    return i + 1
-
-
 def file_size(file_name_fullpath):
     if ".zip/" in file_name_fullpath:
         file_object = loadFile(file_name_fullpath)
