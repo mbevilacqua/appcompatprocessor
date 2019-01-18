@@ -406,8 +406,13 @@ def GetIDForHosts(files_to_process, DB):
             loop_counter += 1
 
         if not magic_check_res:
-            logger.warning("Magic check failed (or audit returned no results), can't process: %s [%d bytes] (skipping file)" % (
-            ntpath.basename(file_name_fullpath), file_size(file_name_fullpath)))
+            if file_size(file_name_fullpath) > 500:
+                logger.error("Magic check failed (or audit returned no results), can't process: %s [%d bytes] (skipping file)" % (
+                ntpath.basename(file_name_fullpath), file_size(file_name_fullpath)))
+            else:
+                logger.info("Magic check failed (or audit returned no results), can't process: %s [%d bytes] (skipping file)" % (
+                ntpath.basename(file_name_fullpath), file_size(file_name_fullpath)))
+
         else:
             if hostName is not None and len(hostName) != 0:
                 if hostName in hostsTest:
