@@ -367,7 +367,7 @@ def GetIDForHosts(files_to_process, DB):
                 tmp_file_size = file_size(file_name_fullpath)
                 if tmp_file_size > 500:
                     logger.warning("No ingest plugin could process: %s (skipping file) [size: %d]" %
-                                   (ntpath.basename(file_name_fullpath), tmp_file_size))
+                                   (file_name_fullpath, tmp_file_size))
                 break
             ingest_type = ingest_plugins_types_stack[0]
             if file_name_original is None:
