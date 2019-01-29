@@ -25,7 +25,7 @@ class TestAppLoadMP(TestCase):
         test_sets = [("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/AmCache-Default", 2, 2, 366),
                      ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/AppCompat-Default", 3, 3, 632),
                      ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/ShimShady64b-Default", 3, 3, 479),
-                     ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults", 3, 6, 1113)]
+                     ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults", 4, 8, 1477)]
 
         for test in test_sets:
             load_test_path = self.BuildTestPath(test[0])
