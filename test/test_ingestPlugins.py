@@ -22,10 +22,10 @@ class TestAppLoadMP(TestCase):
 
 
     def test_ingestTestSets1(self):
-        test_sets = [("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/AmCache-Default", 1, 1, 223),
-                     ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/AppCompat-Default", 2, 2, 411),
+        test_sets = [("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/AmCache-Default", 2, 2, 366),
+                     ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/AppCompat-Default", 3, 3, 632),
                      ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults/ShimShady64b-Default", 3, 3, 479),
-                     ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults", 3, 6, 1113)]
+                     ("StructuredRepo/HX_Grabstuffr/ICE_Exec-Defaults", 4, 8, 1477)]
 
         for test in test_sets:
             load_test_path = self.BuildTestPath(test[0])
@@ -53,9 +53,9 @@ class TestAppLoadMP(TestCase):
 
     def test_ingestTestSets2(self):
         test_sets = [("StructuredRepo/HX_Grabstuffr/ICE_32and64bShimShadyDefaults", 2, 2, 308),
-                     ("StructuredRepo/HX_Grabstuffr/HXRegistryAPIAudit_AMCacheAquisition", 2, 3, 405),
-                     ("StructuredRepo/HX_Grabstuffr/ICE_ACPBundle-Tunned", 2, 5, 741),
-                     ("StructuredRepo/HX_Grabstuffr/ICE_Stacking-Defaults", 2, 2, 147)]
+                     ("StructuredRepo/HX_Grabstuffr/HXRegistryAPIAudit_AMCacheAquisition", 3, 4, 626),
+                     ("StructuredRepo/HX_Grabstuffr/ICE_ACPBundle-Tunned", 3, 7, 1105),
+                     ("StructuredRepo/HX_Grabstuffr/ICE_Stacking-Defaults", 3, 3, 368)]
 
         for test in test_sets:
             load_test_path = self.BuildTestPath(test[0])

@@ -346,7 +346,7 @@ def read_win8_entries(bin_data, ver_magic):
     return entry_list
 
 # Read Windows 10 Apphelp Cache entry format
-def read_win10_entries(bin_data, ver_magic):
+def read_win10_entries(bin_data, ver_magic, creators_update=False):
     offset = 0
     entry_meta_len = 12
     entry_list = []
