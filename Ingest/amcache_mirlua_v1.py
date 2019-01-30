@@ -255,7 +255,7 @@ class Amcache_mirlua_v1(Ingest):
                             exc_type, exc_obj, exc_tb = sys.exc_info()
                             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                             logger.info("Exception processing row (%s): %s [%s / %s / %s]" % (
-                            e.message, element, exc_type, fname, exc_tb.tb_lineno))
+                            e.message, file_fullpath, exc_type, fname, exc_tb.tb_lineno))
             else:
                 pass
                 element.clear()
