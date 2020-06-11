@@ -54,7 +54,7 @@
 [PlugX]=\\mcf\.exe
 [PlugX]=\\mcupdui\.exe
 [PlugX]=\\mcut\.exe
-[PlugX]=\\MsMpEng\.exe / (\\program files\\(Microsoft Security Client|Windows Defender)(\\AntiMalware){0,1}\\MsMpEng\.exe)(\\ProgramData\Microsoft\Windows Defender)
+[PlugX]=\\MsMpEng\.exe / (\\program files\\(Microsoft Security Client|Windows Defender)(\\AntiMalware){0,1}\\MsMpEng\.exe)(\\ProgramData\\Microsoft\\Windows Defender)
 [PlugX]=\\msseces\.exe / (\\Program Files\\Microsoft Security Client\\msseces\.exe)
 [PlugX]=\\NvSmart\.exe
 [PlugX]=\\OInfoP11\.exe / (\\Program Files( \(x86\)){0,1}\\Common Files\\Microsoft Shared\\MSINFO\\OINFOP11\.EXE)
