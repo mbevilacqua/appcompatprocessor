@@ -362,12 +362,12 @@ def GetIDForHosts(files_to_process, DB):
         logger.info("Calculating ID for: %s" % file_name_fullpath)
         while True:
             if loop_counter > len(ingest_plugins_types_stack):
-                # We ignore empty file from hosts with no appcompat data
+                # Ignore small files with no real data in them (manifest files) from looping through ingestion plugins for no purpose
                 # todo: Omit suppression on verbose mode
                 tmp_file_size = file_size(file_name_fullpath)
                 if tmp_file_size > 500:
                     logger.warning("No ingest plugin could process: %s (skipping file) [size: %d]" %
-                                   (ntpath.basename(file_name_fullpath), tmp_file_size))
+                                   (file_name_fullpath, tmp_file_size))
                 break
             ingest_type = ingest_plugins_types_stack[0]
             if file_name_original is None:
@@ -491,7 +491,7 @@ def GetIDForHosts(files_to_process, DB):
 def parseManifestAuditFileName(jsondata, zip_archive_filename):
     # Parse manifest.json data and return files which will need to be processed
     file_list = []
-    m = re.match(r'^.*(?:\\|\/)(.*)[-_].{22}\..{3}$', zip_archive_filename)
+    m = re.match(r'^.*(?:\\|\/)(.*)[-_].{22}(-[0-9]+-[0-9]+){0,1}\..{3}$', zip_archive_filename)
     if m:
         hostname = m.group(1)
         data = json.load(jsondata)
@@ -520,14 +520,11 @@ def parseManifestAuditFileName(jsondata, zip_archive_filename):
                             if 'application/vnd.mandiant.issues+xml' not in result['type']:
                                 file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
                             else: continue
-                    # elif 'plugin' not in audit['generator'] and len(audit['results']) == 1:
-                    #     file_list.append((os.path.join(zip_archive_filename, audit['results'][0]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
-                    # elif 'plugin' in audit['generator'] and len(audit['results']) <= 1:
-                    #     pass
-                    # elif 'plugin' in audit['generator'] and len(audit['results']) == 2:
-                    #     file_list.append((os.path.join(zip_archive_filename, audit['results'][1]['payload']), os.path.join(zip_archive_filename, hostname+"_"+audit['results'][0]['payload']+".xml")))
-                    # else:
-                    #     logger.error("Unknown result type/format on HX audit manifest.json: %s (please report!)" % zip_archive_filename)
+                    elif 'AppCompatCache' in audit['generator']:
+                        for result in audit['results']:
+                            if 'application/vnd.mandiant.issues+xml' not in result['type']:
+                                file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
+                            else: continue
         else:
             logger.warning("HX script execution failed for host: %s, ignoring" % hostname)
     else:

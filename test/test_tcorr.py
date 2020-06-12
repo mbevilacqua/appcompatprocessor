@@ -130,20 +130,20 @@ class TestAppTcorr(TestCase):
                 self.fail(e.message + "\n" + traceback.format_exc())
 
             # Check Names
-            self.assertEquals(directCorrelationData[0][3], "CCC.exe", "test_TcorrTest_prog1 - Name failed!")
-            self.assertEquals(directCorrelationData[1][3], "EEE.exe", "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[1][3], "CCC.exe", "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[0][3], "EEE.exe", "test_TcorrTest_prog1 - Name failed!")
             # Check Before
-            self.assertEquals(directCorrelationData[0][6], 0, "test_TcorrTest_prog1 - Name failed!")
-            self.assertEquals(directCorrelationData[1][6], 2, "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[1][6], 0, "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[0][6], 2, "test_TcorrTest_prog1 - Name failed!")
             # Check After
-            self.assertEquals(directCorrelationData[0][7], 2, "test_TcorrTest_prog1 - Name failed!")
-            self.assertEquals(directCorrelationData[1][7], 0, "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[1][7], 2, "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[0][7], 0, "test_TcorrTest_prog1 - Name failed!")
             # Check InvBond
-            self.assertEquals(directCorrelationData[0][9], "True", "test_TcorrTest_prog1 - Name failed!")
             self.assertEquals(directCorrelationData[1][9], "True", "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[0][9], "True", "test_TcorrTest_prog1 - Name failed!")
             # Check Total_Count
-            self.assertEquals(directCorrelationData[0][10], 2, "test_TcorrTest_prog1 - Name failed!")
             self.assertEquals(directCorrelationData[1][10], 2, "test_TcorrTest_prog1 - Name failed!")
+            self.assertEquals(directCorrelationData[0][10], 2, "test_TcorrTest_prog1 - Name failed!")
 
             try:
                 directCorrelationData = main([self.testset1, "tcorr", "DDD.exe", "-w 2"])

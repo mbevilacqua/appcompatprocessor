@@ -53,7 +53,7 @@ class TestAppLoadMP(TestCase):
 
     def test_ingestTestSets2(self):
         test_sets = [("StructuredRepo/HX_Grabstuffr/ICE_32and64bShimShadyDefaults", 2, 2, 308),
-                     ("StructuredRepo/HX_Grabstuffr/HXRegistryAPIAudit_AMCacheAquisition", 3, 4, 626),
+                     ("StructuredRepo/HX_Grabstuffr/HXRegistryAPIAudit_AMCacheAquisition", 3, 5, 772),
                      ("StructuredRepo/HX_Grabstuffr/ICE_ACPBundle-Tunned", 3, 7, 1105),
                      ("StructuredRepo/HX_Grabstuffr/ICE_Stacking-Defaults", 3, 3, 368)]
 

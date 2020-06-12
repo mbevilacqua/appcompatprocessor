@@ -571,6 +571,7 @@ class TestAppMPEngine(TestCase):
             mpe.addProducer()
             mpe.removeProducer()
 
+            del mpe
             print "Test ended"
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -588,6 +589,7 @@ class TestAppMPEngine(TestCase):
             mpe.removeProducer()
             mpe.removeProducer()
 
+            del mpe
             print "Test ended"
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -604,6 +606,7 @@ class TestAppMPEngine(TestCase):
             mpe.removeProducer()
             mpe.removeProducer()
 
+            del mpe
             print "Test ended"
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -662,6 +665,7 @@ class TestAppMPEngine(TestCase):
                 time.sleep(1)
                 mpe.rebalance()
 
+            del mpe
             print "Test ended"
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -730,6 +734,7 @@ class TestAppMPEngine(TestCase):
                 time.sleep(1)
                 mpe.rebalance()
 
+            del mpe
             print "Test ended"
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -758,7 +763,7 @@ class TestAppMPEngine(TestCase):
                     time.sleep(1)
                     mpe.rebalance()
 
-            # del mpe
+            del mpe
             print "Test ended"
         except Exception:
             traceback.print_exc(file=sys.stdout)
