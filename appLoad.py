@@ -511,7 +511,7 @@ def parseManifestAuditFileName(jsondata, zip_archive_filename):
                             if 'application/vnd.mandiant.issues+xml' not in result['type']:
                                 file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
                             else: continue
-                    elif 'w32scripting-persistence' in audit['generator']:
+                    elif 'w32scripting-persistence' in audit['generator'] or 'persistence' in audit['generator']:
                         for result in audit['results']:
                             if 'application/vnd.mandiant.issues+xml' not in result['type']:
                                 file_list.append((os.path.join(zip_archive_filename, result['payload']), os.path.join(zip_archive_filename, hostname + "_" + result['payload'] + ".xml")))
