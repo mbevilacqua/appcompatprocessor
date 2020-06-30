@@ -51,7 +51,8 @@ else: settings.__PYREGF__ = True
 
 logger = logging.getLogger(__name__)
 _tasksPerJob = 10
-supported_ingest_plugins = ['issues_document.Issues_document', 'appcompat_hxregistryaudit.Appcompat_hxregistryaudit',
+supported_ingest_plugins = ['issues_document.Issues_document',
+                            'appcompat_hxregistryaudit.Appcompat_hxregistryaudit',
                             'appcompat_mirShimShady_v1.Appcompat_mirShimShady_v1',
                             'appcompat_parsed.Appcompat_parsed', 'amcache_miracquisition.Amcache_miracquisition',
                             'appcompat_mirregistryaudit.Appcompat_mirregistryaudit', 'amcache_mirlua_v1.Amcache_mirlua_v1',
