@@ -14,7 +14,7 @@
 
 # Archivers on odd locations
 [RAR]=\\rar(32|64)?\.exe$ / (\\WinRAR|\\wrar)
-[7zip]=\\7za\.exe$ / ((\\VMware Player|\\utilities|\\tools[^\\]*|\\PortableApps\\|\\Lenovo\\System Update|\\adobe creative cloud\\utils\\zip|\\bin)\\7za\.exe)
+[7zip]=\\7za\.exe$ / ((\\VMware Player|\\utilities|\\tools[^\\]*|\\PortableApps\\|\\Lenovo\\System Update|\\adobe creative cloud\\utils\\zip|\\bin)\\7za\.exe|\\program files\\vmware\\vmware tools\\7za\.exe)
 
 # Misspelt Windows binaries example (use the leven module for this!)
 [Misspeling svchost]=\\(scvhost|svch0st|svchosts|svchots|suchost|svchost\.)\.exe
