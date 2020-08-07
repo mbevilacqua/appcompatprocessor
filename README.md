@@ -12,7 +12,7 @@ AppCompatProcessor has been designed to extract additional value from enterprise
 
 If you don't fancy reading check the SANS Threat Hunting 2017 presentation [here](https://www.youtube.com/watch?v=-0bYcD3_bBs)
 
-**Note: Windows platform support has been temporarily removed (expect to see it back shortly though)** 
+**Note: Windows platform support has been temporarily removed (expect to see it back shortly though). Although it has been demonstrated to work completely fine on WSL on Windows 10.** 
 
 
 
