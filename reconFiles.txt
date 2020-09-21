@@ -47,3 +47,4 @@ wmic.exe
 wmiprvse.exe
 wusa.exe
 WinrsHost.exe
+esentutl.exe

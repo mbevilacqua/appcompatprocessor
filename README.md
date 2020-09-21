@@ -21,7 +21,7 @@ If you don't fancy reading check the SANS Threat Hunting 2017 presentation [here
 **OSX**
 You need Python 2.7+, libregf and pyregf (python bindings) from https://github.com/libyal/libregf
 
--Option A Source ditribution package from https://github.com/libyal/libregf/releases
+-Option A Source distribution package from https://github.com/libyal/libregf/releases
 - ./configure --enable-python && make
 - sudo make install
 - python setup.py build
@@ -180,7 +180,7 @@ Will search the FileName field for anything that exactly matches against the reg
 
 ./AppCompatProcessor.py ./database.db fsearch --sql "(FilePath || '\\' || FileName)" -f "Windows\\hkcmd.exe"
 Will search for entries who's fullpath contains Windows\hkcmd.exe. This sql tweak is exactly what happens by default with the Search module BTW.
-Note: The weird syntax there is what SQL expect you to use to cancatenate two fields with a backslash separator. You can use this as an example of how to build custom search spaces.
+Note: The weird syntax there is what SQL expect you to use to concatenate two fields with a backslash separator. You can use this as an example of how to build custom search spaces.
 ```
 
 **filehitcount 'file'**: Count # of FileName hits from 'file'
@@ -224,7 +224,7 @@ dsquery.exe           11
 
 Searches for files which present a high 'temporal execution correlation' with the 'filename' provided.
 
-A high temporal execution correlation between file A and file B indicates that file B is usually exectuted before/after file A (think dropper -> payload)
+A high temporal execution correlation between file A and file B indicates that file B is usually executed before/after file A (think dropper -> payload)
 ``` bash
 ./AppCompatProcessor.py ./test1.db tcorr "net.exe"
 Sample output:
@@ -236,11 +236,11 @@ LastModified       LastUpdate  FilePath             FileName(*)  Size  ExecFlag 
 ```
 > Columns Before / After indicate how many times the file was observed to be executed 'before or after' the file provided.
 
-> For each ocurrence of the file we're analysing, tcorr will look at all files executed before and after within the configured recon window (defaults to 3 and can be set with the -w flag)
+> For each occurrence of the file we're analysing, tcorr will look at all files executed before and after within the configured recon window (defaults to 3 and can be set with the -w flag)
 
 > 'net1.exe' was observed to run 65.296 times after running 'net.exe', note that the 176 executions observed before are due to multiple consecutive executions of 'net.exe'.
 
-> Weight indicates how strong the temporal execution correlation is. For each correlation observed a weight is calculated which decreases exponentially as the execuion 'distance' increases (think of gravity force equations).
+> Weight indicates how strong the temporal execution correlation is. For each correlation observed a weight is calculated which decreases exponentially as the execution 'distance' increases (think of gravity force equations).
 
 > InvBond (inverse bond) indicates if our file was present in the tcorr results after executing a reverse temporal execution correlation. So net.exe has a strong correlation with net1.exe and net1.exe has also a strong correlation with net.exe.
 
@@ -257,13 +257,13 @@ LastModified       LastUpdate  FilePath                                         
 ```
 > In the example above toto.exe was a piece of malware (PlugX+SOGU).
 
-> 'Setup.exe' turned out to be the dropper filename used to deploy toto.exe by the attacker. Note that the attacker was running setup.exe from c:\Windows and not from the path observed in the above output. As the warning implies all off the data execpt for the actual FileName is taken from the first ocurrence in the database only to provide some context (_I'm looking into improving this_)
+> 'Setup.exe' turned out to be the dropper filename used to deploy toto.exe by the attacker. Note that the attacker was running setup.exe from c:\Windows and not from the path observed in the above output. As the warning implies all off the data except for the actual FileName is taken from the first occurrence in the database only to provide some context (_I'm looking into improving this_)
 
 > Note that 'Setup.exe' is not marked as having an inverse tcorr bond with toto.exe, this illustrates the fact that there's a truckload of 'setup.exe' which are not related at all with our payload and thus it's not worth your time to perform a tcorr analysis on 'setup.exe'.
 
 > 'tito.tmp' turned out to be a credential dumper that the attacker regularly used _after_ compromissing each new asset.
 
-The following example intruduces the '--sql' flag which allows you to tweak the SQL queries performed by tcorr to fine tune what's being correlated.
+The following example introduces the '--sql' flag which allows you to tweak the SQL queries performed by tcorr to fine tune what's being correlated.
 On this example the attacker used file names of legit OS files (redacted) so we get a lot of noise from tcorr and no value at all. If we tweak the sql queries performed
 by tcoor to focus only on files stored in C:\Windows though then we get a completely different correlation output.
 
@@ -348,7 +348,7 @@ RowID                  RowNumber  LastModified       LastUpdate  FilePath       
 **reconscan**: Calculate recon activity in the database
 
 All occurrences of any of the recon filenames stored in ./reconFiles.txt are located and the temporal execution distance within them used to create potential reconnaissance sessions.
-A reconnaissance scoring is later calculated aggregating all recon sessions per host using an exponentialy decreasing wight based on temporal execution distance just like with the tcorr module.
+A reconnaissance scoring is later calculated aggregating all recon sessions per host using an exponentially decreasing wight based on temporal execution distance just like with the tcorr module.
 Recon scoring is stored in the database and can be retrieved using the 'list' module.
 
 > Disclamer: Attackers dependent on system tools to perform reconnaissance and very methodical about it are the best for this kind of analysis, you'll probably have varying degrees of success with this module depending on the attacker's TTP.
@@ -469,6 +469,6 @@ The resulting effect is that all the files "seen" by explorer will bubble up in 
 
 It's actually a tiny bit more convoluted than that even. Is you open in explorer a folder full of PE's it will default to alphabetical order (unless you've changed that) now if you then re-sort by size for example what you'll get in you appcompat data will be the files sorted by size (only those that fit into the window size) but you may be missing some.. which? you'll be missing any files that had previously had their appcompat data refreshed when you initially opened the folder so those that alphabetically fit into the explorer's window size. So there's something going on there under the hood preventing this "refresh" mechanism from kicking in again.
 
-Why is that important? For starters you may not want the customer to grab a file and send it to you as you now know that Explorer will destroy your AppCompat data. You'll also be fooled by AppCompat if you stumble accross an attacker using Explorer (weird) but actually more important than that, you now know a little bit more about how that really works which is always interesting.
+Why is that important? For starters you may not want the customer to grab a file and send it to you as you now know that Explorer will destroy your AppCompat data. You'll also be fooled by AppCompat if you stumble across an attacker using Explorer (weird) but actually more important than that, you now know a little bit more about how that really works which is always interesting.
 
-Note: The same behaviour I just described seems to happen to AmCache but we get millisecond resolution timestamps there in the registry last modification timestamp (known as FirstRun in the AmCache context) so we can distinguish when stuff was executed and when we have a massive entry refresh as a result of Explorer opening our folder. BTW, that also means that what's currently known as "FirstRun" in AmCache is likely _not_ FirstRun at all according to some of my testing. We clearely need a lot more research into this artifact.
+Note: The same behaviour I just described seems to happen to AmCache but we get millisecond resolution timestamps there in the registry last modification timestamp (known as FirstRun in the AmCache context) so we can distinguish when stuff was executed and when we have a massive entry refresh as a result of Explorer opening our folder. BTW, that also means that what's currently known as "FirstRun" in AmCache is likely _not_ FirstRun at all according to some of my testing. We clearly need a lot more research into this artifact.

@@ -470,6 +470,7 @@ class Consumer(multiprocessing.Process):
                     # Update progress counter
                     with self.val.get_lock():
                         self.val.value += 1
+
         # Dump hit histogram
         time.sleep(0.5)
         for x in sorted(hit_dict.values(), key=operator.itemgetter(0), reverse=True):
