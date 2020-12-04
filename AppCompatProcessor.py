@@ -1143,57 +1143,21 @@ def appStack(DB, options):
 
 
 def rndsearch(DB, options):
-    from zxcvbn.matching import omnimatch
-    from zxcvbn.scoring import minimum_entropy_match_sequence
+    from zxcvbn import zxcvbn
 
     # Grab data
-    rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 12 OR LENGTH(FileName) = 20)")
-    if (len(rows) > 0):
-        for row in rows:
-            filenameFull = row[0]
-            # filenameFull = "qYXyeDEH.exe"
-            filename = os.path.splitext(filenameFull)[0]
-            length = len(filename)
-            numCaps = sum([1 for i in filename if i in set("AEIOUBCDFGHJKLMNPQRSTVWXYZ")])
-            numSmallCaps = sum([1 for i in filename if i in set("aeioubcdfghjklmnpqrstvwxyz")])
-            numVowels = sum([1 for i in filename if i in set("aeiou")])
-            numConsonants = sum([1 for i in filename if i in set("bcdfghjklmnpqrstvwxyz")])
-            numNumbers = sum([1 for i in filename if i in set("123456789")])
-            numSpaces = sum([1 for i in filename if i in set(" ")])
-            if max(numCaps, numSmallCaps) - min(numCaps, numSmallCaps) <= 2:
-                matches = omnimatch(filename, [])
-                result = minimum_entropy_match_sequence(filename, matches)
-                if result['score'] == 4:
-                    print("%s, %.0f" % (filenameFull, result['score']))
-
-
-
-def rndsearch2(DB, options):
-    from zxcvbn.matching import omnimatch
-    from zxcvbn.scoring import minimum_entropy_match_sequence
-
-    # Grab data
-    rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND LENGTH(FileName) = 11 AND (FilePath = 'C:\' OR FilePath = 'C:\Windows' OR FilePath = 'C:\Windows\Temp')")
+    rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+3 OR LENGTH(FileName) = 16+3) AND (FilePath = 'C:\' OR FilePath = 'C:\Windows' OR FilePath = 'C:\Windows\Windows\System32')")
     if (len(rows) > 0):
         print("Processing %d file names" % len(rows))
         for row in rows:
             filenameFull = row[0]
-            # print filenameFull
-            # filenameFull = "qYXyeDEH.exe"
             filename = os.path.splitext(filenameFull)[0]
             fileext = os.path.splitext(filenameFull)[1]
             length = len(filename)
-            # numCaps = sum([1 for i in filename if i in set("AEIOUBCDFGHJKLMNPQRSTVWXYZ")])
-            # numSmallCaps = sum([1 for i in filename if i in set("aeioubcdfghjklmnpqrstvwxyz")])
-            # numVowels = sum([1 for i in filename if i in set("aeiou")])
-            # numConsonants = sum([1 for i in filename if i in set("bcdfghjklmnpqrstvwxyz")])
-            # numNumbers = sum([1 for i in filename if i in set("123456789")])
-            # numSpaces = sum([1 for i in filename if i in set(" ")])
-            # if (length == 8 or length == 16) and max(numCaps, numSmallCaps) - min(numCaps, numSmallCaps) <= 2:
-            matches = omnimatch(filename, [])
-            result = minimum_entropy_match_sequence(filename, matches)
-            if result['score'] == 4:
-                print("%f, %s" % (result['crack_time'], filenameFull))
+
+            result = zxcvbn(filename, user_inputs=[])
+            if result['score'] >= 2:
+                print("%f, %s" % (result['guesses'], filenameFull))
 
 
 
