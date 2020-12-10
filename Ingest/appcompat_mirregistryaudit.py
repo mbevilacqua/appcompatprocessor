@@ -7,6 +7,7 @@ from appAux import loadFile
 import hashlib
 import re
 from ShimCacheParser_ACP import read_mir, write_it
+import traceback
 
 logger = logging.getLogger(__name__)
 # Module to ingest AppCompat data in XML format
@@ -76,38 +77,69 @@ class Appcompat_mirregistryaudit(Ingest):
 
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         # Returns data in rowsData
+        minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
+        maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
         rowNumber = 0
-        # Process file using ShimCacheParser
+
+        check_tags = ['LastModified', 'AppCompatPath']
         try:
-            xml_data = loadFile(file_fullpath)
-            (error, entries) = read_mir(xml_data, True)
-            xml_data.close()
+            # Process file using ShimCacheParser
+            try:
+                xml_data = loadFile(file_fullpath)
+                (error, entries) = read_mir(xml_data, True)
+                xml_data.close()
 
-            assert(not error)
-            if not entries:
-                logger.warning("[ShimCacheParser] found no entries for %s" % file_fullpath)
-                return False
-            else:
-                rows = write_it(entries, "StringIO")[1:]
-        except IOError, err:
-            logger.error("[ShimCacheParser] Error opening binary file: %s" % str(err))
+                assert(not error)
+                if not entries:
+                    logger.warning("[ShimCacheParser] found no entries for %s" % file_fullpath)
+                    return False
+                else:
+                    rows = write_it(entries, "StringIO")[1:]
+            except IOError, err:
+                logger.error("[ShimCacheParser] Error opening binary file: %s" % str(err))
 
-        # Process records
-        appCompatREGEX = re.compile(
-            "((?:\d\d\d\d\-\d\d\-\d\d \d\d:\d\d:\d\d)|N\/A)[, ]((?:\d\d\d\d\-\d\d\-\d\d \d\d:\d\d:\d\d)|N\/A)[, ](.*)\\\([^\\\]*)[, ](N\/A|\d*)[, ](N\/A|True|False)")
-        assert (rows is not None)
-        for r in rows:
-            if b'\x00' in r:
-                logger.debug("NULL byte found, skipping bad shimcache parse: %s" % r)
-                continue
-            m = appCompatREGEX.match(r)
-            if m:
-                namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__, RowNumber=rowNumber,
-                                                  LastModified=unicode(m.group(1)), LastUpdate=unicode(m.group(2)),
-                                                  FilePath=unicode(m.group(3)),
-                                                  FileName=unicode(m.group(4)), Size=unicode(m.group(5)),
-                                                  ExecFlag=str(m.group(6)), InstanceID=instanceID)
-                rowsData.append(namedrow)
-                rowNumber += 1
-            else:
-                logger.warning("Entry regex failed for: %s - %s" % (hostID, r))
+            # Process records
+            appCompatREGEX = re.compile(
+                "((?:\d\d\d\d\-\d\d\-\d\d \d\d:\d\d:\d\d)|N\/A)[, ]((?:\d\d\d\d\-\d\d\-\d\d \d\d:\d\d:\d\d)|N\/A)[, ](.*)\\\([^\\\]*)[, ](N\/A|\d*)[, ](N\/A|True|False)")
+            assert (rows is not None)
+            for r in rows:
+                if b'\x00' in r:
+                    logger.debug("NULL byte found, skipping bad shimcache parse: %s" % r)
+                    continue
+                m = appCompatREGEX.match(r)
+                if m:
+                    try:
+                        # Convert to timestamps:
+                        if m.group(1) != 'N/A':
+                            tmp_LastModified = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+                        else:
+                            tmp_LastModified = minSQLiteDTS
+                        if m.group(2) != 'N/A':
+                            tmp_LastUpdate = datetime.strptime(m.group(2), "%Y-%m-%d %H:%M:%S")
+                        else:
+                            tmp_LastUpdate = minSQLiteDTS
+
+                    except Exception as e:
+                        print("crap")
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        logger.info("Exception processing row (%s): %s [%s / %s / %s]" % (
+                            e.message, file_fullpath, exc_type, fname, exc_tb.tb_lineno))
+
+                    namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
+                                                      RowNumber=rowNumber,
+                                                      LastModified=tmp_LastModified,
+                                                      LastUpdate=tmp_LastUpdate,
+                                                      FilePath=unicode(m.group(3)),
+                                                      FileName=unicode(m.group(4)),
+                                                      Size=unicode(m.group(5)),
+                                                      ExecFlag=str(m.group(6)),
+                                                      InstanceID=instanceID)
+                    rowsData.append(namedrow)
+                    rowNumber += 1
+                else:
+                    logger.warning("Entry regex failed for: %s - %s" % (hostID, r))
+        except Exception as e:
+            print e.message
+            print traceback.format_exc()
+            pass

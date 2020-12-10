@@ -35,6 +35,9 @@ class Amcache_miracquisition(Ingest):
             regf_file = pyregf.file()
             regf_file.open_file_object(file_object, "r")
             magic_key = regf_file.get_key_by_path(r'Root\File')
+            if magic_key is None:
+                # Check if it's a Windows 10 AmCache hive
+                magic_key = regf_file.get_key_by_path(r'Root\InventoryApplicationFile')
             regf_file.close()
             del regf_file
             if magic_key is not None:
@@ -52,7 +55,7 @@ class Amcache_miracquisition(Ingest):
         regf_file = pyregf.file()
         regf_file.open_file_object(file_object, "r")
         tmp = regf_file.get_key_by_path(r'Root\File')
-        if regf_file.get_key_by_path(r'Root\File') == None:
+        if regf_file.get_key_by_path(r'Root\File') is None and regf_file.get_key_by_path(r'Root\InventoryApplicationFile') is None:
             logger.warning("Not an AmCache hive! [%s]" % file_name_fullpath)
         else:
             instanceID = regf_file.root_key.last_written_time

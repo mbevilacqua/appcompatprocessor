@@ -8,7 +8,7 @@ from contextlib import closing
 import time
 import ntpath
 import appDB
-from appAux import update_progress, outputcolum, file_len
+from appAux import update_progress, outputcolum, file_size
 import hashlib
 import operator
 from datetime import timedelta
@@ -287,7 +287,7 @@ def LoadRegexBulkSearch(file_full_path):
                     if ValidateRegex(clean_regex, None):
                         regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
                 else:
-                    logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
+                    logger.warning("Warning: Looks like a bad formated configuration line, skipping: %s" % line)
         else:
             m = line_regex.match(line)
             if m:
@@ -297,7 +297,7 @@ def LoadRegexBulkSearch(file_full_path):
                 if ValidateRegex(clean_regex, None):
                     regex_terms.append(SearchLine(name=m.group(1), regex=clean_regex, filter=None))
             else:
-                logger.warning("Warning: Looks like a bad formated line, skipping: %s" % line)
+                logger.warning("Warning: Looks like a bad formated configuration line, skipping: %s" % line)
 
     if regex_terms:
         # We setup the concatenation of regexes with no filters as searchTermRegex"
@@ -470,6 +470,7 @@ class Consumer(multiprocessing.Process):
                     # Update progress counter
                     with self.val.get_lock():
                         self.val.value += 1
+
         # Dump hit histogram
         time.sleep(0.5)
         for x in sorted(hit_dict.values(), key=operator.itemgetter(0), reverse=True):
@@ -678,7 +679,7 @@ def appSearchMP(dbfilenameFullPath, searchType, search_space, options):
     if num_hits.value:
         logger.info("Head:")
         # Dump head of output file:
-        num_lines = file_len(options.outputFile)
+        num_lines = file_size(options.outputFile)
         from itertools import islice
         with open(options.outputFile) as myfile:
             head = list(islice(myfile, 5))

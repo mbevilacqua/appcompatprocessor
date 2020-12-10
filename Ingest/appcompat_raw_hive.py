@@ -6,6 +6,7 @@ from appAux import loadFile
 import pyregf
 import settings
 import re
+from datetime import datetime
 from ShimCacheParser_ACP import read_from_hive, write_it
 
 logger = logging.getLogger(__name__)
@@ -95,9 +96,12 @@ class Appcompat_Raw_hive(Ingest):
     def processFile(self, file_fullpath, hostID, instanceID, rowsData):
         rowNumber = 0
         entries = None
+        minSQLiteDTS = datetime(1, 1, 1, 0, 0, 0)
+        maxSQLiteDTS = datetime(9999, 12, 31, 0, 0, 0)
+
         # Process file using ShimCacheParser
         try:
-            entries = read_from_hive(file_fullpath, True)
+            entries = read_from_hive(loadFile(file_fullpath), True)
             if not entries:
                 logger.warning("[ShimCacheParser] found no entries for %s" % file_fullpath)
                 return False
@@ -116,11 +120,31 @@ class Appcompat_Raw_hive(Ingest):
                 continue
             m = appCompatREGEX.match(r)
             if m:
-                namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__, RowNumber=rowNumber,
-                                                  LastModified=unicode(m.group(1)), LastUpdate=unicode(m.group(2)),
+                try:
+                    # Convert to timestamps:
+                    if m.group(1) != 'N/A':
+                        tmp_LastModified = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+                    else: tmp_LastModified = minSQLiteDTS
+                    if m.group(2) != 'N/A':
+                        tmp_LastUpdate = datetime.strptime(m.group(2), "%Y-%m-%d %H:%M:%S")
+                    else: tmp_LastUpdate = minSQLiteDTS
+
+                except Exception as e:
+                    print("crap")
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    logger.info("Exception processing row (%s): %s [%s / %s / %s]" % (
+                    e.message, file_fullpath, exc_type, fname, exc_tb.tb_lineno))
+
+                namedrow = settings.EntriesFields(HostID=hostID, EntryType=settings.__APPCOMPAT__,
+                                                  RowNumber=rowNumber,
+                                                  LastModified=tmp_LastModified,
+                                                  LastUpdate=tmp_LastUpdate,
                                                   FilePath=unicode(m.group(3)),
-                                                  FileName=unicode(m.group(4)), Size=unicode(m.group(5)),
-                                                  ExecFlag=str(m.group(6)), InstanceID=instanceID)
+                                                  FileName=unicode(m.group(4)),
+                                                  Size=unicode(m.group(5)),
+                                                  ExecFlag=str(m.group(6)),
+                                                  InstanceID=instanceID)
                 rowsData.append(namedrow)
                 rowNumber += 1
             else:

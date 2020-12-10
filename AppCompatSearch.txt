@@ -14,7 +14,7 @@
 
 # Archivers on odd locations
 [RAR]=\\rar(32|64)?\.exe$ / (\\WinRAR|\\wrar)
-[7zip]=\\7za\.exe$ / ((\\VMware Player|\\utilities|\\tools[^\\]*|\\PortableApps\\|\\Lenovo\\System Update|\\adobe creative cloud\\utils\\zip|\\bin)\\7za\.exe)
+[7zip]=\\7za\.exe$ / ((\\VMware Player|\\utilities|\\tools[^\\]*|\\PortableApps\\|\\Lenovo\\System Update|\\adobe creative cloud\\utils\\zip|\\bin)\\7za\.exe|\\program files\\vmware\\vmware tools\\7za\.exe)
 
 # Misspelt Windows binaries example (use the leven module for this!)
 [Misspeling svchost]=\\(scvhost|svch0st|svchosts|svchots|suchost|svchost\.)\.exe
@@ -54,7 +54,7 @@
 [PlugX]=\\mcf\.exe
 [PlugX]=\\mcupdui\.exe
 [PlugX]=\\mcut\.exe
-[PlugX]=\\MsMpEng\.exe / (\\program files\\(Microsoft Security Client|Windows Defender)(\\AntiMalware){0,1}\\MsMpEng\.exe)
+[PlugX]=\\MsMpEng\.exe / (\\program files\\(Microsoft Security Client|Windows Defender)(\\AntiMalware){0,1}\\MsMpEng\.exe)(\\ProgramData\\Microsoft\\Windows Defender)
 [PlugX]=\\msseces\.exe / (\\Program Files\\Microsoft Security Client\\msseces\.exe)
 [PlugX]=\\NvSmart\.exe
 [PlugX]=\\OInfoP11\.exe / (\\Program Files( \(x86\)){0,1}\\Common Files\\Microsoft Shared\\MSINFO\\OINFOP11\.EXE)
