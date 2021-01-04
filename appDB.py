@@ -490,8 +490,8 @@ class DBClass(object):
 
     def PrintEntryRowID(self, RowID):
         with closing(self.conn.cursor()) as c:
-            data = self.Query("SELECT HostName, LastModified, LastUpdate, FilePath, FileName, Size, ExecFlag FROM \
-            Entries INNER JOIN Hosts ON Entries.HostID = Hosts.HostID WHERE RowID = '%s'" % RowID)
+            data = self.Query("SELECT HostName, LastModified, LastUpdate, FilePath, FileName, Size, ExecFlag FROM Entries_FilePaths \
+                                        INNER JOIN Hosts ON Entries_FilePaths.hostID = Hosts.hostID WHERE RowID = '%s'" % RowID)
             results = []
             for row in data:
                 results.append(('white', row))
@@ -501,7 +501,7 @@ class DBClass(object):
     def PrintEntryRowIDList(self, rowIDList):
         with closing(self.conn.cursor()) as c:
             data = self.Query("SELECT HostName, LastModified, LastUpdate, FilePath, FileName, Size, ExecFlag FROM \
-            Entries INNER JOIN Hosts ON Entries.HostID = Hosts.HostID WHERE RowID IN (%s)" % ",".join(rowIDList))
+            Entries_FilePaths INNER JOIN Hosts ON Entries.HostID = Hosts.HostID WHERE RowID IN (%s)" % ",".join(rowIDList))
             if len(data) > 0:
                 results = []
                 results.append(('cyan', list(data[0]._fields)))
