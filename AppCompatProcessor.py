@@ -1150,12 +1150,6 @@ def rndsearch(DB, options):
     results = list()
 
     print("Searching for likely random filenames where len(filename)=8|16 and filepath in (C:\, C:\Windows, C:\Windows\System32, ADMIN$)")
-    # Grab filename count for files of interest
-    rows = DB.QuerySpinner("SELECT FileName,COUNT(DISTINCT(HostID)) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 16+1+3) GROUP BY FileName")
-    if (len(rows) > 0):
-        for row in rows:
-            freq_list[row[0]] = row[1]
-
     # Grab unique filenames of interest
     rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 16+1+3) AND (FilePath = 'C:\\' OR FilePath = 'C:\\Windows' OR FilePath = 'C:\\Windows\\Windows\\System32' OR FilePath LIKE '%\\ADMIN$\\' OR FilePath LIKE '%\\ADMIN$')")
     if (len(rows) > 0):
@@ -1165,22 +1159,23 @@ def rndsearch(DB, options):
             fileext = os.path.splitext(filenameFull)[1]
             length = len(filename)
 
-            # Calc_time seemed like a good idea but doesn't really yield the results I was looking for, needs more work.
-            td = zxcvbn(filename, user_inputs=[])['calc_time']
-            results.append((filenameFull, td))
+            #Check how common the actual filename is in the dataset
+            hostCount = DB.QueryInt("SELECT COUNT(DISTINCT(HostID)) FROM Entries_FilePaths WHERE FileName = '%s'" % (filenameFull))
+            if hostCount > 2:
+                #print("Too common?: %s [#hosts: %s]" % (filenameFull, hostCount))
+                pass
+            else:
+                # Calc_time seemed like a good idea but doesn't really yield the results I was looking for, needs more work.
+                td = zxcvbn(filename, user_inputs=[])['calc_time']
+                results.append((filenameFull, td, hostCount))
 
         results = sorted(results, key=lambda i: i[1], reverse=True)
 
         for item in results:
-            if freq_list[item[0]] <=2:
-                print("Potentially random: %s [rnd: %s | #hosts: %s]" % (item[0], item[1], freq_list[item[0]]))
-
-                rows = DB.Query("SELECT RowID FROM Entries WHERE FileName = '%s'" % item[0])
-                for row in rows:
-                    DB.PrintEntryRowID(row[0])
-
-            else:
-                print("Too common?: %s [rnd: %s | #hosts: %s]" % (item[0], item[1], freq_list[item[0]]))
+            print("Potentially random: %s [rnd: %s | #hosts: %s]" % (item[0], item[1], item[2]))
+            rows = DB.Query("SELECT RowID FROM Entries WHERE FileName = '%s'" % item[0])
+            for row in rows:
+                DB.PrintEntryRowID(row[0])
 
 
 def main(args):
