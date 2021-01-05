@@ -353,6 +353,10 @@ Recon scoring is stored in the database and can be retrieved using the 'list' mo
 
 > Disclamer: Attackers dependent on system tools to perform reconnaissance and very methodical about it are the best for this kind of analysis, you'll probably have varying degrees of success with this module depending on the attacker's TTP.
 
+**rndsearch**: Find randomly named files of interest
+
+Attempt to identify randomly named files of interest (8|16 characters long)
+
 **fevil**: Use temporal correlation on recon sessions to find potential evil [**experimental not worth your time yet**]
 
 "Find Evil" is an experiment at zero-knowledge automatic attacker detection based on temporal execution correlation around reconnaissance sessions detected.
