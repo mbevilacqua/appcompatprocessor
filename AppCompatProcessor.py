@@ -1244,7 +1244,7 @@ def main(args):
     preconParser.add_argument('-w', action="store", type=int, dest="window", default=5, help='recon window size')
     fevilParser = subparsers.add_parser('fevil', help='Use temporal correlation on recon sessions to find potential evil (experimental)')
     fevilParser.add_argument('-w', action="store", type=int, dest="window", default=5, help='recon window size')
-    rndSearchParser = subparsers.add_parser('rndsearch', help='Experimental')
+    rndSearchParser = subparsers.add_parser('rndsearch', help='Experimental - search for randomly named files of interest')
     rndSearchParser.add_argument('-r', action="store", type=int, dest="ratio", default=5, help='vowel to consonant ratio')
     hashsearchParser = subparsers.add_parser('hashsearch', help='hashsearch module')
     hashsearchParser.add_argument('hashsearch_file', nargs='?', help='file with significant SHA1 hashes to process')
