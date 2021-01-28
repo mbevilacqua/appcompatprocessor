@@ -1150,8 +1150,15 @@ def rndsearch(DB, options):
     results = list()
 
     print("Searching for likely random filenames where len(filename)=8|16 and filepath in (C:\, C:\Windows, C:\Windows\System32, ADMIN$)")
+    if options.path is not None:
+        print("Performing analysis on:\n %s" % (options.path))
+        query = "SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 16+1+3) AND (FilePath = '{}')".format(options.path)
+    else:
+        print("Performing analysis on:\n C:\, C:\Windows, C:\Windows\Windows\System32, %\ADMIN$")
+        query = "SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 16+1+3) AND (FilePath = 'C:\\' OR FilePath = 'C:\\Windows' OR FilePath = 'C:\\Windows\\Windows\\System32' OR FilePath LIKE '%\\ADMIN$\\' OR FilePath LIKE '%\\ADMIN$')"
+
     # Grab unique filenames of interest
-    rows = DB.QuerySpinner("SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 16+1+3) AND (FilePath = 'C:\\' OR FilePath = 'C:\\Windows' OR FilePath = 'C:\\Windows\\Windows\\System32' OR FilePath LIKE '%\\ADMIN$\\' OR FilePath LIKE '%\\ADMIN$')")
+    rows = DB.QuerySpinner(query)
     if (len(rows) > 0):
         for row in rows:
             filenameFull = row[0]
@@ -1245,7 +1252,7 @@ def main(args):
     fevilParser = subparsers.add_parser('fevil', help='Use temporal correlation on recon sessions to find potential evil (experimental)')
     fevilParser.add_argument('-w', action="store", type=int, dest="window", default=5, help='recon window size')
     rndSearchParser = subparsers.add_parser('rndsearch', help='Experimental - search for randomly named files of interest')
-    rndSearchParser.add_argument('-r', action="store", type=int, dest="ratio", default=5, help='vowel to consonant ratio')
+    rndSearchParser.add_argument('-p', action="store", type=str, dest="path", default=None, help='Perform analysis the path provided')
     hashsearchParser = subparsers.add_parser('hashsearch', help='hashsearch module')
     hashsearchParser.add_argument('hashsearch_file', nargs='?', help='file with significant SHA1 hashes to process')
     testsetParser = subparsers.add_parser('testset', help='Build fake testset database')
