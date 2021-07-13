@@ -1149,13 +1149,13 @@ def rndsearch(DB, options):
     freq_list = dict()
     results = list()
 
-    print("Searching for likely random filenames where len(filename)=8|16 and filepath in (C:\, C:\Windows, C:\Windows\System32, ADMIN$)")
+    print("Searching for likely random filenames where len(filename)=8|16 and filepath in (C:\, C:\Windows\Temp, C:\Windows, C:\Windows\System32, ADMIN$)")
     if options.path is not None:
         print("Performing analysis on:\n %s" % (options.path))
-        query = "SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 16+1+3) AND (FilePath = '{}')".format(options.path)
+        query = "SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (FilePath = '{}')".format(options.path)
     else:
         print("Performing analysis on:\n C:\, C:\Windows, C:\Windows\Windows\System32, %\ADMIN$")
-        query = "SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 16+1+3) AND (FilePath = 'C:\\' OR FilePath = 'C:\\Windows' OR FilePath = 'C:\\Windows\\Windows\\System32' OR FilePath LIKE '%\\ADMIN$\\' OR FilePath LIKE '%\\ADMIN$')"
+        query = "SELECT DISTINCT(FileName) FROM Entries_FilePaths WHERE FileName LIKE '%.exe' AND (LENGTH(FileName) = 8+1+3 OR LENGTH(FileName) = 11+1+3 OR LENGTH(FileName) = 16+1+3) AND (FilePath = 'C:\\' OR FilePath = 'C:\\Windows\\Temp' OR FilePath = 'C:\\Windows' OR FilePath = 'C:\\Windows\\Windows\\System32' OR FilePath LIKE '%\\ADMIN$\\' OR FilePath LIKE '%\\ADMIN$')"
 
     # Grab unique filenames of interest
     rows = DB.QuerySpinner(query)
